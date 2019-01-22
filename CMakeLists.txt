@@ -37,7 +37,9 @@ target_compile_features(nickel
 )
 
 # Tests
-add_subdirectory(tests)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
 
 # Install
 include(GNUInstallDirs)
