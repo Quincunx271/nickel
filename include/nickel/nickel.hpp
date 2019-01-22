@@ -22,20 +22,6 @@ namespace nickel {
         template <bool Cond, typename A, typename B>
         using conditional_t = typename conditional<Cond>::template eval<A, B>;
 
-        template <bool... Bs>
-        struct bool_pack
-        {};
-
-        template <bool... Bs>
-        constexpr bool all = std::is_same< //
-            bool_pack<true, Bs...>, //
-            bool_pack<Bs..., true> //
-            >::value;
-
-        // By De Morgan's Law:
-        template <bool... Bs>
-        constexpr bool any = !all<!Bs...>;
-
         template <typename T>
         struct type_identity
         {
@@ -69,8 +55,6 @@ namespace nickel {
         template <typename Name, typename T>
         struct named
         {
-            using name_type = Name;
-
             T&& value;
         };
 
@@ -85,7 +69,7 @@ namespace nickel {
             // Is there already an argument for the given name?
             template <typename Name>
             static constexpr bool is_set
-                = any<std::is_same<typename Nameds::name_type, Name>::value...>;
+                = !std::is_void<find_named<Name, Nameds...>>::value;
 
             template <typename... FNameds>
             explicit constexpr storage(FNameds&&... nameds)
