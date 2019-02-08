@@ -9,6 +9,7 @@ add_executable(test.nickel
   catch_main.test.cpp
   # sources
   nickel/nickel.test.cpp
+  nickel/stdfunction.segfault.test.cpp
 )
 target_link_libraries(test.nickel
   PRIVATE

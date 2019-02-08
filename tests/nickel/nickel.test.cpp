@@ -155,6 +155,8 @@ namespace {
         }
     };
 
+    state count_special::state_ = {};
+
     template <typename T>
     auto lifetime(T const& t)
     {
@@ -163,8 +165,6 @@ namespace {
             return foo(t);
         });
     }
-
-    state count_special::state_ = {};
 }
 
 TEST_CASE("proper lifetime management")
