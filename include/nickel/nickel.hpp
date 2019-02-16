@@ -3,6 +3,9 @@
 #include <type_traits>
 #include <utility>
 
+#define NICKEL_DETAIL_FWD(...)                                                 \
+    ::std::forward<decltype(__VA_ARGS__)>(__VA_ARGS__)
+
 namespace nickel {
     namespace detail {
         template <bool B>
@@ -21,6 +24,9 @@ namespace nickel {
 
         template <bool Cond, typename A, typename B>
         using conditional_t = typename conditional<Cond>::template eval<A, B>;
+
+        template <typename T>
+        using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
 
         template <typename T>
         struct type_identity
@@ -73,7 +79,7 @@ namespace nickel {
 
             template <typename... FNameds>
             explicit constexpr storage(FNameds&&... nameds)
-                : Nameds{std::forward<FNameds>(nameds)}...
+                : Nameds{NICKEL_DETAIL_FWD(nameds)}...
             {}
 
             template <typename Name, typename T>
@@ -81,12 +87,9 @@ namespace nickel {
             {
                 return storage<Nameds..., named<Name, T>>{
                     static_cast<Nameds&&>(*this)...,
-                    named<Name, T>{std::forward<T>(value)},
+                    named<Name, T>{NICKEL_DETAIL_FWD(value)},
                 };
             }
-
-#define NICKEL_DETAIL_FWD(...)                                                 \
-    ::std::forward<decltype(__VA_ARGS__)>(__VA_ARGS__)
 
             template <typename Name>
             constexpr decltype(auto) get() &&
@@ -111,11 +114,12 @@ namespace nickel {
                            private Names...
         {
         public:
+            template <typename FFn>
             explicit constexpr wrapped_fn(
-                Storage&& storage, Fn&& fn, Names... names)
+                Storage&& storage, FFn&& fn, Names... names)
                 : Names{std::move(names)}...
                 , storage_{std::move(storage)}
-                , fn_{std::forward<Fn>(fn)}
+                , fn_{NICKEL_DETAIL_FWD(fn)}
             {}
 
             // Bind the name to the argument.
@@ -127,12 +131,12 @@ namespace nickel {
             {
                 using NewStorage
                     = decltype(std::move(storage_).template set<Name>(
-                        std::forward<T>(value)));
+                        NICKEL_DETAIL_FWD(value)));
 
-                return wrapped_fn<NewStorage, Fn, Names...>{
+                return wrapped_fn<NewStorage, remove_cvref_t<Fn>, Names...>{
                     std::move(storage_).template set<Name>(
-                        std::forward<T>(value)),
-                    std::forward<Fn>(fn_),
+                        NICKEL_DETAIL_FWD(value)),
+                    std::move(fn_),
                     static_cast<Names&&>(*this)...,
                 };
             }
@@ -140,13 +144,13 @@ namespace nickel {
             // Call the function with bound arguments.
             constexpr decltype(auto) operator()() &&
             {
-                return std::forward<Fn>(fn_)(
+                return std::move(fn_)(
                     std::move(storage_).template get<Names>()...);
             }
 
         private:
             Storage storage_;
-            Fn&& fn_;
+            Fn fn_;
         };
 
         template <typename... Names>
@@ -154,7 +158,7 @@ namespace nickel {
         {
             template <typename T>
             static constexpr bool self
-                = std::is_same<std::decay_t<T>, partial_wrap>::value;
+                = std::is_same<remove_cvref_t<T>, partial_wrap>::value;
 
         public:
             explicit constexpr partial_wrap(Names... names)
@@ -164,9 +168,11 @@ namespace nickel {
             template <typename Fn>
             constexpr auto operator()(Fn&& fn) &&
             {
-                return detail::wrapped_fn<storage<>, Fn, Names...>{
+                using DFn = remove_cvref_t<Fn>;
+
+                return detail::wrapped_fn<storage<>, DFn, Names...>{
                     storage<>{},
-                    std::forward<Fn>(fn),
+                    NICKEL_DETAIL_FWD(fn),
                     static_cast<Names&&>(*this)...,
                 };
             }
@@ -176,8 +182,8 @@ namespace nickel {
     template <typename... Names>
     constexpr auto wrap(Names&&... names)
     {
-        return detail::partial_wrap<std::decay_t<Names>...>{
-            std::forward<Names>(names)...,
+        return detail::partial_wrap<detail::remove_cvref_t<Names>...>{
+            NICKEL_DETAIL_FWD(names)...,
         };
     }
 
@@ -194,7 +200,7 @@ namespace nickel {
             constexpr auto name(T&& value) &&                                  \
             {                                                                  \
                 return static_cast<Derived&&>(*this)(                          \
-                    variable##_type{}, std::forward<T>(value));                \
+                    variable##_type{}, NICKEL_DETAIL_FWD(value));              \
             }                                                                  \
         };                                                                     \
     };                                                                         \

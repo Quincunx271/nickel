@@ -8,8 +8,8 @@ set(GNU_flags -Wall -Wextra -Wpedantic)
 add_executable(test.nickel
   catch_main.test.cpp
   # sources
+  nickel/dangling.function.ref.test.cpp
   nickel/nickel.test.cpp
-  nickel/stdfunction.segfault.test.cpp
 )
 target_link_libraries(test.nickel
   PRIVATE
