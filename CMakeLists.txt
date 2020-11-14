@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -64,14 +64,12 @@ install(DIRECTORY include/nickel/
 
 include(CMakePackageConfigHelpers)
 
-set(old_arch ${CMAKE_SIZEOF_VOID_P})
-set(CMAKE_SIZEOF_VOID_P)
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/nickelConfigVersion.cmake"
   VERSION "${PROJECT_VERSION}"
   COMPATIBILITY SameMinorVersion
+  ARCH_INDEPENDENT
 )
-set(CMAKE_SIZEOF_VOID_P ${old_arch})
 
 install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/nickelConfigVersion.cmake"
