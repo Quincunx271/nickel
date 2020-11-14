@@ -9,6 +9,7 @@ add_executable(test.nickel
   catch_main.test.cpp
   # sources
   nickel/dangling.function.ref.test.cpp
+  nickel/name_groups.test.cpp
   nickel/nickel.test.cpp
 )
 target_link_libraries(test.nickel
@@ -19,6 +20,10 @@ target_link_libraries(test.nickel
 target_compile_options(test.nickel
   PRIVATE
     ${${CMAKE_CXX_COMPILER_ID}_flags}
+)
+target_compile_features(test.nickel
+  PRIVATE
+    cxx_std_14
 )
 
 include(Catch)

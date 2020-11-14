@@ -36,7 +36,7 @@ namespace nickel {
 
         template <typename... Ts>
         struct inherit : Ts...
-        {};
+        { };
 
         // Slightly modified version of `mp_map_find` from Boost.MP11, copied
         // with permission from Peter Dimov.
@@ -79,15 +79,15 @@ namespace nickel {
 
             template <typename... FNameds>
             explicit constexpr storage(FNameds&&... nameds)
-                : Nameds{NICKEL_DETAIL_FWD(nameds)}...
-            {}
+                : Nameds {NICKEL_DETAIL_FWD(nameds)}...
+            { }
 
             template <typename Name, typename T>
             constexpr auto set(T&& value) &&
             {
-                return storage<Nameds..., named<Name, T>>{
+                return storage<Nameds..., named<Name, T>> {
                     static_cast<Nameds&&>(*this)...,
-                    named<Name, T>{NICKEL_DETAIL_FWD(value)},
+                    named<Name, T> {NICKEL_DETAIL_FWD(value)},
                 };
             }
 
@@ -117,10 +117,10 @@ namespace nickel {
             template <typename FFn>
             explicit constexpr wrapped_fn(
                 Storage&& storage, FFn&& fn, Names... names)
-                : Names{std::move(names)}...
-                , storage_{std::move(storage)}
-                , fn_{NICKEL_DETAIL_FWD(fn)}
-            {}
+                : Names {std::move(names)}...
+                , storage_ {std::move(storage)}
+                , fn_ {NICKEL_DETAIL_FWD(fn)}
+            { }
 
             // Bind the name to the argument.
             // NOT PUBLIC API
@@ -133,7 +133,7 @@ namespace nickel {
                     = decltype(std::move(storage_).template set<Name>(
                         NICKEL_DETAIL_FWD(value)));
 
-                return wrapped_fn<NewStorage, remove_cvref_t<Fn>, Names...>{
+                return wrapped_fn<NewStorage, remove_cvref_t<Fn>, Names...> {
                     std::move(storage_).template set<Name>(
                         NICKEL_DETAIL_FWD(value)),
                     std::move(fn_),
@@ -162,29 +162,71 @@ namespace nickel {
 
         public:
             explicit constexpr partial_wrap(Names... names)
-                : Names{std::move(names)}...
-            {}
+                : Names {std::move(names)}...
+            { }
 
             template <typename Fn>
             constexpr auto operator()(Fn&& fn) &&
             {
                 using DFn = remove_cvref_t<Fn>;
 
-                return detail::wrapped_fn<storage<>, DFn, Names...>{
-                    storage<>{},
+                return detail::wrapped_fn<storage<>, DFn, Names...> {
+                    storage<> {},
                     NICKEL_DETAIL_FWD(fn),
                     static_cast<Names&&>(*this)...,
+                };
+            }
+        };
+
+        template <typename... Names>
+        class name_group : private Names...
+        {
+        public:
+            explicit constexpr name_group(Names... names)
+                : Names {std::move(names)}...
+            { }
+
+            template <typename... OtherNames>
+            constexpr auto combine(name_group<OtherNames...>&& group) &&
+            {
+                return name_group<Names..., OtherNames...> {
+                    static_cast<Names&&>(*this)...,
+                    (OtherNames &&)(group)...,
+                };
+            }
+
+            template <typename... OtherNames>
+            constexpr auto operator()(OtherNames&&... names) &&
+            {
+                return detail::partial_wrap<Names...,
+                    detail::remove_cvref_t<OtherNames>...> {
+                    static_cast<Names&&>(*this)...,
+                    NICKEL_DETAIL_FWD(names)...,
                 };
             }
         };
     }
 
     template <typename... Names>
-    constexpr auto wrap(Names&&... names)
+    constexpr auto name_group(Names&&... names)
     {
-        return detail::partial_wrap<detail::remove_cvref_t<Names>...>{
+        return detail::name_group<detail::remove_cvref_t<Names>...> {
             NICKEL_DETAIL_FWD(names)...,
         };
+    }
+
+    template <typename... Names, typename... Rest>
+    constexpr auto name_group(
+        detail::name_group<Names...> group, Rest&&... names)
+    {
+        return std::move(group).combine(
+            nickel::name_group(NICKEL_DETAIL_FWD(names)...));
+    }
+
+    template <typename... Names>
+    constexpr auto wrap(Names&&... names)
+    {
+        return nickel::name_group(NICKEL_DETAIL_FWD(names)...)();
     }
 
 // Generate a new name.
@@ -200,13 +242,13 @@ namespace nickel {
             constexpr auto name(T&& value) &&                                  \
             {                                                                  \
                 return static_cast<Derived&&>(*this)(                          \
-                    variable##_type{}, NICKEL_DETAIL_FWD(value));              \
+                    variable##_type {}, NICKEL_DETAIL_FWD(value));             \
             }                                                                  \
         };                                                                     \
     };                                                                         \
                                                                                \
     constexpr auto variable = variable##_type                                  \
-    {}
+    { }
 
     // built-in names
     namespace names {
