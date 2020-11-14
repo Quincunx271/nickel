@@ -12,8 +12,7 @@ namespace {
     auto some_function()
     {
         return nickel::wrap(foo_name, bar_name)([](auto&& foo, auto&& bar) {
-            return std::forward<decltype(foo)>(foo)(
-                std::forward<decltype(bar)>(bar));
+            return std::forward<decltype(foo)>(foo)(std::forward<decltype(bar)>(bar));
         });
     }
 }
@@ -41,8 +40,7 @@ namespace {
 
         constexpr decltype(auto) as_tuple() const
         {
-            return std::tie(default_ctor, copy_ctor, copy_assign, move_ctor,
-                move_assign, dtor);
+            return std::tie(default_ctor, copy_ctor, copy_assign, move_ctor, move_assign, dtor);
         }
 
         friend constexpr bool operator==(state const& lhs, state const& rhs)
@@ -58,11 +56,9 @@ namespace {
         friend std::ostream& operator<<(std::ostream& out, state const& it)
         {
             return out << "default: " << it.default_ctor << "\n"
-                       << "copy_ctor: " << it.copy_ctor
-                       << ", copy_assign: " << it.copy_assign
+                       << "copy_ctor: " << it.copy_ctor << ", copy_assign: " << it.copy_assign
                        << ", total: " << it.copy_ctor + it.copy_assign << "\n"
-                       << "move_ctor: " << it.move_ctor
-                       << ", move_assign: " << it.move_assign
+                       << "move_ctor: " << it.move_ctor << ", move_assign: " << it.move_assign
                        << ", total: " << it.move_ctor + it.move_assign << "\n"
                        << "dtor: " << it.dtor;
         }
@@ -146,7 +142,7 @@ namespace {
 
         static void reset()
         {
-            state_ = state{};
+            state_ = state {};
         }
 
         static auto get_state()
@@ -175,7 +171,7 @@ TEST_CASE("proper lifetime management")
     {
         SECTION("clvalue")
         {
-            count_special const clvalue{};
+            count_special const clvalue {};
 
             auto const state = count_special::get_state();
             lifetime(clvalue)
@@ -188,7 +184,7 @@ TEST_CASE("proper lifetime management")
         }
         SECTION("mlvalue")
         {
-            count_special clvalue{};
+            count_special clvalue {};
 
             auto const state = count_special::get_state();
             lifetime(clvalue)
@@ -210,7 +206,7 @@ TEST_CASE("proper lifetime management")
             }();
 
             try {
-                lifetime(count_special{})
+                lifetime(count_special {})
                     .foo([&state_before](auto&& t) {
                         if (t.get_state() != state_before) throw t.get_state();
                     })

@@ -6,9 +6,7 @@
 #include <catch2/catch.hpp>
 
 namespace {
-    constexpr auto dimX = nickel::name_group(nickel::names::x);
-
-    constexpr auto dim2 = nickel::name_group(dimX, nickel::names::y);
+    constexpr auto dim2 = nickel::name_group(nickel::names::x, nickel::names::y);
 
     auto dist2()
     {
@@ -17,12 +15,17 @@ namespace {
 
     auto dist3()
     {
-        return nickel::wrap(dim2, nickel::names::z)(
-            [](double x, double y, double z) { return std::hypot(dist2().x(x).y(y)(), z); });
+        return nickel::wrap(nickel::kwargs_group(dim2), nickel::names::z)(
+            [](auto&& kwargs, double z) {
+                return dist2() //
+                    .x(dist2() //
+                        (std::forward<decltype(kwargs)>(kwargs))()) //
+                    .y(z)();
+            });
     }
 }
 
-TEST_CASE("name_group works")
+TEST_CASE("kwargs works")
 {
     double const expected = std::hypot(std::hypot(1, 2), 3);
 

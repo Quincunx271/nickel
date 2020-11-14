@@ -9,6 +9,7 @@ add_executable(test.nickel
   catch_main.test.cpp
   # sources
   nickel/dangling.function.ref.test.cpp
+  nickel/kwargs.test.cpp
   nickel/name_groups.test.cpp
   nickel/nickel.test.cpp
 )
@@ -23,7 +24,7 @@ target_compile_options(test.nickel
 )
 target_compile_features(test.nickel
   PRIVATE
-    cxx_std_14
+    cxx_std_17
 )
 
 include(Catch)
