@@ -5,14 +5,9 @@ set(MSVC_flags /permissive-)
 set(Clang_flags -Wall -Wextra -Wpedantic)
 set(GNU_flags -Wall -Wextra -Wpedantic)
 
-add_executable(test.nickel
-  catch_main.test.cpp
-  # sources
-  nickel/dangling.function.ref.test.cpp
-  nickel/kwargs.test.cpp
-  nickel/name_groups.test.cpp
-  nickel/nickel.test.cpp
-)
+file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS "*.test.cpp")
+
+add_executable(test.nickel ${test_sources})
 target_link_libraries(test.nickel
   PRIVATE
     nickel::nickel
