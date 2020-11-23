@@ -4,7 +4,12 @@
 #include <type_traits>
 #include <utility>
 
-#define NICKEL_DETAIL_FWD(...) ::std::forward<decltype(__VA_ARGS__)>(__VA_ARGS__)
+#define NICKEL_DETAIL_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
+#define NICKEL_DETAIL_MOVE(...)                                                                    \
+    static_cast<::std::remove_reference_t<decltype(__VA_ARGS__)>&&>(__VA_ARGS__)
+
+#define NICKEL_FWD NICKEL_DETAIL_FWD
+#define NICKEL_MOVE NICKEL_DETAIL_MOVE
 
 namespace nickel {
     namespace detail {
@@ -68,86 +73,111 @@ namespace nickel {
             T value;
         };
 
-        template <typename NameGroup>
-        class kwargs_group : private NameGroup
+        template <typename... Names>
+        struct names_t
         {
-            template <typename T>
-            static constexpr bool self = std::is_same<remove_cvref_t<T>, kwargs_group>::value;
+            static constexpr bool count = sizeof...(Names);
 
-        public:
-            template <typename FNameGroup, std::enable_if_t<!self<FNameGroup>, int> = 0>
-            explicit constexpr kwargs_group(FNameGroup&& group)
-                : NameGroup {NICKEL_DETAIL_FWD(group)}
-            { }
+            template <template <typename...> class MFn>
+            using apply = MFn<Names...>;
 
-            template <typename OtherNameGroup>
-            constexpr auto combine(kwargs_group<OtherNameGroup>&& group) &&
+            template <typename... Rhs>
+            using append = names_t<Names..., Rhs...>;
+
+            template <typename Rhs>
+            using append_names = typename Rhs::template apply<append>;
+
+            template <typename Fn, typename Storage, typename... Extra>
+            static constexpr auto map_reduce(Fn&& reduce, Storage&& storage, Extra&&... extra)
+                -> decltype(
+                    reduce(NICKEL_FWD(extra)..., NICKEL_FWD(storage).get(tag_t<Names> {})...))
             {
-                auto&& ng = static_cast<NameGroup&&>(*this);
-                auto&& other_ng = (OtherNameGroup &&) group;
-                return kwargs_group<
-                    remove_cvref_t<decltype(std::move(ng).combine(std::move(other_ng)))>> {
-                    std::move(ng).combine(std::move(other_ng)),
-                };
+                return reduce(NICKEL_FWD(extra)..., NICKEL_FWD(storage).get(tag_t<Names> {})...);
             }
-
-            // // NOT PUBLIC API
-            // template <typename Derived>
-            // struct name_type : public Names::name_type<Derived>...
-            // { };
-        };
-
-        // NOT PUBLIC API
-        template <typename... Nameds>
-        class kwargs : private Nameds...
-        {
-        public:
-            template <typename... Values>
-            explicit constexpr kwargs(Values&&... values)
-                : Nameds {std::forward<Values>(values)}...
-            { }
-
-            template <typename Named>
-            constexpr auto _get(tag_t<Named>) &&
-            {
-                return NICKEL_DETAIL_FWD(static_cast<Named&&>(*this));
-            }
-        };
-
-        template <typename Name, typename Value>
-        struct defaulted : named<Name, Value>
-        {
-            using base_name = Name;
-
-            template <typename Derived>
-            using name_type = typename Name::template name_type<Derived>;
         };
 
         template <typename Name, typename... Nameds>
         using find_named = typename mp_map_find_impl<Name, Nameds...>::type;
 
-        template <typename Defaults, typename... Nameds>
-        class storage;
+        struct construct_tag
+        { };
 
-        struct nil_storage
+        struct set_tag
+        { };
+
+        struct get_tag
+        { };
+
+        template <typename Storage>
+        class kwargs : private Storage
         {
-            template <typename Defaults, typename... Names>
-            constexpr auto combine(
-                storage<Defaults, Names...>&& other) && -> storage<Defaults, Names...>&&;
+        public:
+            template <typename FStorage>
+            explicit constexpr kwargs(construct_tag, FStorage&& storage)
+                : Storage {NICKEL_FWD(storage)}
+            { }
 
-            constexpr auto combine(nil_storage) &&
+            template <typename Name>
+            constexpr decltype(auto) get(Name) &
             {
-                return nil_storage {};
+                return static_cast<Storage&>(*this).get(tag_t<Name> {});
+            }
+
+            template <typename Name>
+            constexpr decltype(auto) get(Name) const&
+            {
+                return static_cast<Storage const&>(*this).get(tag_t<Name> {});
+            }
+
+            template <typename Name>
+            constexpr decltype(auto) get(Name) &&
+            {
+                return static_cast<Storage&&>(*this).get(tag_t<Name> {});
+            }
+
+            template <typename Name>
+            constexpr decltype(auto) get(Name) const&&
+            {
+                return static_cast<Storage const&&>(*this).get(tag_t<Name> {});
+            }
+
+            // NOT PUBLIC API
+            template <typename OtherStorage>
+            constexpr auto combine(OtherStorage&& rhs) &&
+            {
+                return static_cast<Storage&&>(*this).combine(NICKEL_FWD(rhs));
+            }
+
+            // The following are NOT PUBLIC API:
+            template <typename Name>
+            constexpr decltype(auto) operator()(get_tag, Name) &
+            {
+                return static_cast<Storage&>(*this).get(tag_t<Name> {});
+            }
+
+            template <typename Name>
+            constexpr decltype(auto) operator()(get_tag, Name) const&
+            {
+                return static_cast<Storage const&>(*this).get(tag_t<Name> {});
+            }
+
+            template <typename Name>
+            constexpr decltype(auto) operator()(get_tag, Name) &&
+            {
+                return static_cast<Storage&&>(*this).get(tag_t<Name> {});
+            }
+
+            template <typename Name>
+            constexpr decltype(auto) operator()(get_tag, Name) const&&
+            {
+                return static_cast<Storage const&&>(*this).get(tag_t<Name> {});
             }
         };
 
         // The current arguments
-        template <typename Defaults, typename... Nameds>
-        class storage : private Defaults, private Nameds...
+        template <typename... Nameds>
+        class storage : private Nameds...
         {
-            template <typename T>
-            static constexpr bool self = std::is_same<remove_cvref_t<T>, storage>::value;
-
             template <typename Name>
             using lookup_name = find_named<Name, Nameds...>;
 
@@ -156,54 +186,44 @@ namespace nickel {
             template <typename Name>
             static constexpr bool is_set = !std::is_void<find_named<Name, Nameds...>>::value;
 
-            template <typename FDefaults, typename... FNameds,
-                std::enable_if_t<!self<FDefaults>, int> = 0>
-            explicit constexpr storage(FDefaults&& defaults, FNameds&&... nameds)
-                : Defaults {NICKEL_DETAIL_FWD(defaults)}
-                , Nameds {NICKEL_DETAIL_FWD(nameds)}...
+            template <typename... FNameds>
+            explicit constexpr storage(construct_tag, FNameds&&... nameds)
+                : Nameds {NICKEL_FWD(nameds)}...
             { }
 
             template <typename Name, typename T>
             constexpr auto set(T&& value) &&
             {
-                return storage<Defaults, Nameds..., named<Name, T&&>> {
-                    static_cast<Defaults&&>(*this),
+                return storage<Nameds..., named<Name, T&&>> {
+                    construct_tag {},
                     static_cast<Nameds&&>(*this)...,
-                    named<Name, T&&> {NICKEL_DETAIL_FWD(value)},
+                    named<Name, T&&> {NICKEL_FWD(value)},
                 };
             }
 
-            constexpr auto combine(nil_storage) && -> storage<Defaults, Nameds...>&&
+            template <typename Named>
+            constexpr auto get_named() && -> Named&&
             {
-                return std::move(*this);
-            }
-
-            template <typename OtherDefaults, typename... OtherNameds>
-            constexpr auto combine(storage<OtherDefaults, OtherNameds...>&& other) &&
-            {
-                auto&& my_defaults = static_cast<Defaults&&>(*this);
-                auto&& other_defaults = (OtherDefaults &&)(other);
-
-                using combined_defaults = remove_cvref_t<decltype(
-                    std::move(my_defaults).combine(std::move(other_defaults)))>;
-
-                return storage<combined_defaults, Nameds..., OtherNameds...> {
-                    std::move(my_defaults).combine(std::move(other_defaults)),
-                    static_cast<Nameds&&>(*this)...,
-                    (OtherNameds &&)(other)...,
-                };
+                return static_cast<Named&&>(*this);
             }
 
             template <typename Name>
-            constexpr decltype(auto) _get(tag_t<Name> id) &&
+            constexpr decltype(auto) lookup_named(tag_t<Name>) &&
             {
+                static_assert(is_set<Name>, "Name is not set");
                 using Named = lookup_name<Name>;
 
-                if constexpr (std::is_same<Named, void>::value) {
-                    return static_cast<Defaults&&>(*this)._get(id);
-                } else {
-                    return static_cast<Named&&>(*this);
-                }
+                return static_cast<Named&&>(*this);
+            }
+
+            template <typename... OtherNameds>
+            constexpr auto combine(storage<OtherNameds...>&& other) &&
+            {
+                return storage<Nameds..., OtherNameds...> {
+                    construct_tag {},
+                    static_cast<Nameds&&>(*this)...,
+                    NICKEL_MOVE(other).template get_named<OtherNameds>()...,
+                };
             }
 
             template <typename Name>
@@ -211,115 +231,110 @@ namespace nickel {
             {
                 // Note: Clang rejects this without the macro, GCC is fine.
                 // Unsure which compiler is wrong.
-                return NICKEL_DETAIL_FWD(std::move(*this)._get(id).value);
+                return NICKEL_FWD(NICKEL_MOVE(*this).lookup_named(id).value);
             }
 
+            // NOT PUBLIC API
             template <typename... Names>
-            constexpr decltype(auto) get(tag_t<kwargs_group<Names...>>) &&
+            constexpr decltype(auto) get(tag_t<names_t<Names...>>) &&
             {
-                using kwargs_t = kwargs<lookup_name<Names>...>;
-                return kwargs_t {
-                    std::move(*this)._get(tag_t<Names> {})...,
+                using kwargs_storage_t = storage<lookup_name<Names>...>;
+                return kwargs<kwargs_storage_t> {
+                    construct_tag {},
+                    kwargs_storage_t {
+                        construct_tag {},
+                        NICKEL_MOVE(*this).get(tag_t<Names> {})...,
+                    },
                 };
             }
         };
 
-        template <typename Defaults, typename... Nameds>
-        constexpr auto nil_storage::combine(
-            storage<Defaults, Nameds...>&& other) && -> storage<Defaults, Nameds...>&&
-        {
-            return std::move(other);
-        }
-
-        // Provide the .name() member iff the parameter hasn't been set before.
+        // Provide the .<name>() member iff the parameter hasn't been set before.
         template <typename Storage, typename Name, typename CRTP>
-        using name_member_if_unset = conditional_t<Storage::template is_set<Name>, tag_t<Name>,
-            typename Name::template name_type<CRTP>>;
+        using allow_set_only_if_unset = conditional_t<Storage::template is_set<Name>, tag_t<Name>,
+            typename Name::template set_type<CRTP>>;
 
-        // Enables the passing of named arguments
-        template <typename Storage, typename Fn, typename... Names>
-        class wrapped_fn
-            : public name_member_if_unset<Storage, Names, wrapped_fn<Storage, Fn, Names...>>...,
-              private Names...
+        template <typename Derived, typename Storage, typename Kwargs, typename Names>
+        struct wrapped_fn_base;
+
+        template <typename Derived, typename Storage, typename... Kwargs, typename... Names>
+        struct wrapped_fn_base<Derived, Storage, names_t<Kwargs...>, names_t<Names...>>
+            : public allow_set_only_if_unset<Storage, Kwargs, Derived>...,
+              public allow_set_only_if_unset<Storage, Names, Derived>...
+        { };
+
+        template <typename Defaults, typename Storage, typename Fn, typename Kwargs, typename Names>
+        class wrapped_fn : public wrapped_fn_base<wrapped_fn<Defaults, Storage, Fn, Kwargs, Names>,
+                               Storage, Kwargs, Names>
         {
+        private:
+            Defaults defaults_;
+            Storage storage_;
+            Fn fn_;
+
         public:
-            template <typename FFn>
-            explicit constexpr wrapped_fn(Storage&& storage, FFn&& fn, Names... names)
-                : Names {std::move(names)}...
-                , storage_ {std::move(storage)}
-                , fn_ {NICKEL_DETAIL_FWD(fn)}
+            template <typename FDefaults, typename FFn>
+            explicit constexpr wrapped_fn(FDefaults&& defaults, Storage&& storage, FFn&& fn)
+                : defaults_ {NICKEL_FWD(defaults)}
+                , storage_ {NICKEL_MOVE(storage)}
+                , fn_ {NICKEL_FWD(fn)}
             { }
 
             // Bind the name to the argument.
             // NOT PUBLIC API
-            // Note: not a named member function to avoid conflicts with
-            // inherited names.
             template <typename Name, typename T>
-            constexpr auto operator()(Name, T&& value) &&
+            constexpr auto operator()(set_tag, Name, T&& value) &&
             {
                 using NewStorage
-                    = decltype(std::move(storage_).template set<Name>(NICKEL_DETAIL_FWD(value)));
-
-                return wrapped_fn<NewStorage, remove_cvref_t<Fn>, Names...> {
-                    std::move(storage_).template set<Name>(NICKEL_DETAIL_FWD(value)),
-                    std::move(fn_),
-                    static_cast<Names&&>(*this)...,
+                    = decltype(NICKEL_MOVE(storage_).template set<Name>(NICKEL_FWD(value)));
+                return wrapped_fn<Defaults, NewStorage, remove_cvref_t<Fn>, Kwargs, Names> {
+                    NICKEL_MOVE(defaults_),
+                    NICKEL_MOVE(storage_).template set<Name>(NICKEL_FWD(value)),
+                    NICKEL_MOVE(fn_),
                 };
             }
 
-            // Bind the name to the argument.
+            // Bind the kwargs
             // NOT PUBLIC API
-            // Note: not a named member function to avoid conflicts with
-            // inherited names.
-            template <typename Name, typename T>
-            constexpr auto operator()(tag_t<Name>, T&& value) &&
+            template <typename OtherStorage>
+            constexpr auto operator()(kwargs<OtherStorage>&& kwargs) &&
             {
-                using NewStorage
-                    = decltype(std::move(storage_).template set<Name>(NICKEL_DETAIL_FWD(value)));
-
-                return wrapped_fn<NewStorage, remove_cvref_t<Fn>, Names...> {
-                    std::move(storage_).template set<Name>(NICKEL_DETAIL_FWD(value)),
-                    std::move(fn_),
-                    static_cast<Names&&>(*this)...,
+                using NewStorage = decltype(NICKEL_MOVE(kwargs).combine(NICKEL_MOVE(storage_)));
+                return wrapped_fn<Defaults, NewStorage, remove_cvref_t<Fn>, Kwargs, Names> {
+                    NICKEL_MOVE(defaults_),
+                    NICKEL_MOVE(kwargs).combine(NICKEL_MOVE(storage_)),
+                    NICKEL_MOVE(fn_),
                 };
-            }
-
-            // NOT PUBLIC API
-            template <typename Name, typename T>
-            constexpr auto operator->*(named<Name, T> value) &&
-            {
-                return std::move(*this)(tag_t<Name> {}, std::move(value).value);
-            }
-
-#ifdef __cpp_fold_expressions
-            template <typename... KwargsNameds>
-            constexpr auto operator()(kwargs<KwargsNameds...>&& kwargs_) &&
-            {
-                return (std::move(*this)->*...->*std::move(kwargs_)._get(tag_t<KwargsNameds> {}));
-            }
-#endif
-
-            // Call the function with bound arguments.
-            constexpr decltype(auto) operator()() &&
-            {
-                return std::move(fn_)(std::move(storage_).get(tag_t<Names> {})...);
             }
 
         private:
-            Storage storage_;
-            Fn fn_;
-        };
+            constexpr decltype(auto) do_call(std::true_type) &&
+            {
+                return Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_),
+                    NICKEL_MOVE(storage_).get(tag_t<Kwargs> {}));
+            }
 
-        template <typename Defaults, typename... Names>
-        class partial_wrap : private Defaults
-        {
-            template <typename T>
-            static constexpr bool self = std::is_same<remove_cvref_t<T>, partial_wrap>::value;
+            constexpr decltype(auto) do_call(std::false_type) &&
+            {
+                return Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_));
+            }
 
         public:
-            template <typename FDefaults, std::enable_if_t<!self<FDefaults>, int> = 0>
-            explicit constexpr partial_wrap(FDefaults&& defaults)
-                : Defaults {NICKEL_DETAIL_FWD(defaults)}
+            // Call the function with bound arguments.
+            constexpr decltype(auto) operator()() &&
+            {
+                return NICKEL_MOVE(*this).do_call(
+                    std::integral_constant<bool, Kwargs::count != 0> {});
+            }
+        };
+
+        template <typename Defaults, typename Kwargs, typename Names>
+        class partial_wrap : private Defaults
+        {
+        public:
+            template <typename FDefaults>
+            explicit constexpr partial_wrap(construct_tag, FDefaults&& defaults)
+                : Defaults {NICKEL_FWD(defaults)}
             { }
 
             template <typename Fn>
@@ -327,141 +342,88 @@ namespace nickel {
             {
                 using DFn = remove_cvref_t<Fn>;
 
-                return detail::wrapped_fn<storage<Defaults>, DFn, Names...> {
-                    storage<Defaults> {static_cast<Defaults&&>(*this)},
-                    NICKEL_DETAIL_FWD(fn),
-                    Names {}...,
+                return wrapped_fn<Defaults, storage<>, DFn, Kwargs, Names> {
+                    Defaults {static_cast<Defaults&&>(*this)},
+                    storage<> {construct_tag {}},
+                    NICKEL_FWD(fn),
                 };
             }
         };
-
-        struct name_group_expand_into_tag
-        { };
 
         struct name_group_to_partial_fn_tag
         { };
 
-        template <typename Defaults, typename... Names>
+        struct mark_kwargs_tag
+        { };
+
+        template <typename Defaults, typename Kwargs, typename Names>
         class name_group : private Defaults
         {
-            template <typename T>
-            static constexpr bool self = std::is_same<remove_cvref_t<T>, name_group>::value;
-
         public:
-            template <typename FDefaults, std::enable_if_t<!self<FDefaults>, int> = 0>
-            explicit constexpr name_group(FDefaults&& defaults)
-                : Defaults {NICKEL_DETAIL_FWD(defaults)}
+            template <typename FDefaults>
+            explicit constexpr name_group(construct_tag, FDefaults&& defaults)
+                : Defaults {NICKEL_FWD(defaults)}
             { }
 
-            template <typename OtherDefaults, typename... OtherNames>
-            constexpr auto combine(name_group<OtherDefaults, OtherNames...>&& group) &&
+            template <typename OtherDefaults, typename OtherKwargs, typename OtherNames>
+            constexpr auto combine(name_group<OtherDefaults, OtherKwargs, OtherNames>&& group) &&
             {
                 using combined_defaults = remove_cvref_t<decltype(
                     static_cast<Defaults&&>(*this).combine((OtherDefaults &&) group))>;
 
-                return name_group<combined_defaults, Names..., OtherNames...> {
+                return name_group<combined_defaults,
+                    typename Kwargs::template append_names<OtherKwargs>,
+                    typename Names::template append_names<OtherNames>> {
+                    construct_tag {},
                     static_cast<Defaults&&>(*this).combine((OtherDefaults &&) group),
                 };
             }
 
-            template <typename Fn>
-            constexpr auto operator()(name_group_expand_into_tag, Fn f) &&
-            {
-                return f(tag_t<Names> {}...);
-            }
-
             constexpr auto operator()(name_group_to_partial_fn_tag) &&
             {
-                return std::move(*this)(name_group_expand_into_tag {}, [&](auto... names) {
-                    return detail::partial_wrap<Defaults, typename decltype(names)::type...> {
-                        static_cast<Defaults&&>(*this),
-                    };
-                });
+                return detail::partial_wrap<Defaults, Kwargs, Names> {
+                    construct_tag {},
+                    static_cast<Defaults&&>(*this),
+                };
+            }
+
+            constexpr auto _mark_all_kwargs(mark_kwargs_tag) &&
+            {
+                return name_group<Defaults, typename Kwargs::template append_names<Names>,
+                    names_t<>> {
+                    construct_tag {},
+                    static_cast<Defaults&&>(*this),
+                };
             }
         };
-
-        template <typename Name, typename Value>
-        constexpr auto extracted_default(defaulted<Name, Value>) -> named<Name, Value>;
-
-        template <typename Name>
-        constexpr auto extracted_default(Name) -> tag_t<void, Name>;
-
-        template <typename Name, typename Value>
-        constexpr auto extracted_name(defaulted<Name, Value>) -> Name;
-
-        template <typename Name>
-        constexpr auto extracted_name(Name) -> Name;
-
-        template <typename Name, typename Value>
-        constexpr auto extract_default(defaulted<Name, Value>&& defaulted) -> named<Name, Value>&&
-        {
-            return std::move(defaulted);
-        }
-
-        template <typename Name, typename Value>
-        constexpr auto extract_default(defaulted<Name, Value> const& defaulted)
-            -> named<Name, Value> const&
-        {
-            return defaulted;
-        }
-
-        template <typename Name>
-        constexpr auto extract_default(Name) -> tag_t<void, Name>
-        {
-            return {};
-        }
-
-        template <typename... Names>
-        constexpr auto extract_defaults(Names&&... names)
-        {
-            return storage<nil_storage, decltype(detail::extracted_default(names))...> {
-                nil_storage {},
-                detail::extract_default(NICKEL_DETAIL_FWD(names))...,
-            };
-        }
     }
 
     template <typename... Names>
-    constexpr auto name_group(Names&&... names)
+    constexpr auto name_group(Names...)
     {
-        return detail::name_group<decltype(detail::extract_defaults(NICKEL_DETAIL_FWD(names)...)),
-            decltype(detail::extracted_name(names))...> {
-            detail::extract_defaults(NICKEL_DETAIL_FWD(names)...),
+        return detail::name_group<detail::storage<>, detail::names_t<>, detail::names_t<Names...>> {
+            detail::construct_tag {},
+            detail::storage<> {detail::construct_tag {}},
         };
     }
 
-    template <typename... Names, typename... Rest>
-    constexpr auto name_group(detail::name_group<Names...> group, Rest&&... names)
+    template <typename Defaults, typename Kwargs, typename Names, typename... Rest>
+    constexpr auto name_group(detail::name_group<Defaults, Kwargs, Names> group, Rest&&... names)
     {
-        return std::move(group).combine(nickel::name_group(NICKEL_DETAIL_FWD(names)...));
+        return NICKEL_MOVE(group).combine(nickel::name_group(NICKEL_FWD(names)...));
     }
 
     template <typename... Names>
     constexpr auto kwargs_group(Names&&... names)
     {
-        auto ng = nickel::name_group(NICKEL_DETAIL_FWD(names)...);
-        return detail::kwargs_group<decltype(ng)> {std::move(ng)};
-    }
-
-    template <typename... Names, typename... Rest>
-    constexpr auto kwargs_group(detail::kwargs_group<Names...> kwargs, Rest&&... names)
-    {
-        return std::move(kwargs).combine(nickel::kwargs_group(NICKEL_DETAIL_FWD(names)...));
+        auto ng = nickel::name_group(NICKEL_FWD(names)...);
+        return NICKEL_MOVE(ng)._mark_all_kwargs(detail::mark_kwargs_tag {});
     }
 
     template <typename... Names>
     constexpr auto wrap(Names&&... names)
     {
-        return nickel::name_group(NICKEL_DETAIL_FWD(names)...)(
-            detail::name_group_to_partial_fn_tag {});
-    }
-
-    template <typename... Names1, typename... Names2, typename... Rest>
-    constexpr auto wrap(detail::kwargs_group<Names1...> kwargs1,
-        detail::kwargs_group<Names1...> kwargs2, Rest&&... names)
-    {
-        return nickel::wrap(
-            std::move(kwargs1).combine(std::move(kwargs2)), NICKEL_DETAIL_FWD(names)...);
+        return nickel::name_group(NICKEL_FWD(names)...)(detail::name_group_to_partial_fn_tag {});
     }
 
 // Generate a new name.
@@ -471,21 +433,46 @@ namespace nickel {
     struct variable##_type                                                                         \
     {                                                                                              \
         template <typename Derived>                                                                \
-        struct name_type                                                                           \
+        struct set_type                                                                            \
         {                                                                                          \
             template <typename T>                                                                  \
             constexpr auto name(T&& value) &&                                                      \
             {                                                                                      \
                 return static_cast<Derived&&>(*this)(                                              \
-                    variable##_type {}, NICKEL_DETAIL_FWD(value));                                 \
+                    ::nickel::detail::set_tag {}, variable##_type {}, NICKEL_DETAIL_FWD(value));   \
+            }                                                                                      \
+        };                                                                                         \
+                                                                                                   \
+        template <typename Derived>                                                                \
+        struct get_type                                                                            \
+        {                                                                                          \
+            constexpr auto name() &                                                                \
+            {                                                                                      \
+                return static_cast<Derived&>(*this)(                                               \
+                    ::nickel::detail::get_tag {}, variable##_type {});                             \
+            }                                                                                      \
+            constexpr auto name() const&                                                           \
+            {                                                                                      \
+                return static_cast<Derived const&>(*this)(                                         \
+                    ::nickel::detail::get_tag {}, variable##_type {});                             \
+            }                                                                                      \
+            constexpr auto name() &&                                                               \
+            {                                                                                      \
+                return static_cast<Derived&&>(*this)(                                              \
+                    ::nickel::detail::get_tag {}, variable##_type {});                             \
+            }                                                                                      \
+            constexpr auto name() const&&                                                          \
+            {                                                                                      \
+                return static_cast<Derived const&&>(*this)(                                        \
+                    ::nickel::detail::get_tag {}, variable##_type {});                             \
             }                                                                                      \
         };                                                                                         \
                                                                                                    \
         template <typename T>                                                                      \
         constexpr auto operator=(T&& value) const                                                  \
         {                                                                                          \
-            return ::nickel::detail::defaulted<variable##_type,                                    \
-                ::nickel::detail::remove_cvref_t<T>> {NICKEL_DETAIL_FWD(value)};                   \
+            return 1; /*::nickel::detail::defaulted<variable##_type,                               \
+                 ::nickel::detail::remove_cvref_t<T>> {NICKEL_DETAIL_FWD(value)}; */               \
         }                                                                                          \
     };                                                                                             \
                                                                                                    \
@@ -500,3 +487,6 @@ namespace nickel {
         NICKEL_NAME(z, z);
     }
 }
+
+#undef NICKEL_FWD
+#undef NICKEL_MOVE
