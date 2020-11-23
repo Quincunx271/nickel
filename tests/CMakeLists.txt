@@ -19,7 +19,7 @@ target_compile_options(test.nickel
 )
 target_compile_features(test.nickel
   PRIVATE
-    cxx_std_17
+    cxx_std_14
 )
 
 include(Catch)

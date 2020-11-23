@@ -374,9 +374,11 @@ namespace nickel {
         };
 
         template <typename Name, typename Value>
-        struct defaulted : named<Name, Value>
+        struct defaulted
         {
             using name_type = Name;
+
+            Value value;
         };
 
         struct name_group_to_partial_fn_tag
@@ -527,7 +529,9 @@ namespace nickel {
         constexpr auto operator=(T&& value) const                                                  \
         {                                                                                          \
             return ::nickel::detail::defaulted<variable##_type,                                    \
-                ::nickel::detail::remove_cvref_t<T>> {NICKEL_DETAIL_FWD(value)};                   \
+                ::nickel::detail::remove_cvref_t<T>> {                                             \
+                NICKEL_DETAIL_FWD(value),                                                          \
+            };                                                                                     \
         }                                                                                          \
     };                                                                                             \
                                                                                                    \
