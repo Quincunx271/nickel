@@ -87,12 +87,13 @@ namespace nickel {
             template <typename Rhs>
             using append_names = typename Rhs::template apply<append>;
 
-            template <typename Fn, typename Storage, typename... Extra>
-            static constexpr auto map_reduce(Fn&& reduce, Storage&& storage, Extra&&... extra)
-                -> decltype(
-                    reduce(NICKEL_FWD(extra)..., NICKEL_FWD(storage).get(tag_t<Names> {})...))
+            template <typename Fn, typename Storage, typename Defaults, typename... Extra>
+            static constexpr auto map_reduce(Fn&& reduce, Storage&& storage, Defaults&& defaults,
+                Extra&&... extra) -> decltype(reduce(NICKEL_FWD(extra)...,
+                NICKEL_FWD(storage).get_or_default(tag_t<Names> {}, NICKEL_FWD(defaults))...))
             {
-                return reduce(NICKEL_FWD(extra)..., NICKEL_FWD(storage).get(tag_t<Names> {})...);
+                return reduce(NICKEL_FWD(extra)...,
+                    NICKEL_FWD(storage).get_or_default(tag_t<Names> {}, NICKEL_FWD(defaults))...);
             }
         };
 
@@ -234,16 +235,36 @@ namespace nickel {
                 return NICKEL_FWD(NICKEL_MOVE(*this).lookup_named(id).value);
             }
 
+            template <typename Name, typename Defaults>
+            constexpr decltype(auto) get_or_default_(
+                std::false_type, tag_t<Name> id, Defaults&& defaults) &&
+            {
+                return NICKEL_FWD(defaults).get(id);
+            }
+
+            template <typename Name, typename Defaults>
+            constexpr decltype(auto) get_or_default_(std::true_type, tag_t<Name> id, Defaults&&) &&
+            {
+                return NICKEL_MOVE(*this).get(id);
+            }
+
+            template <typename Name, typename Defaults>
+            constexpr decltype(auto) get_or_default(tag_t<Name> id, Defaults&& defaults) &&
+            {
+                return NICKEL_MOVE(*this).get_or_default_(
+                    std::integral_constant<bool, is_set<Name>> {}, id, NICKEL_FWD(defaults));
+            }
+
             // NOT PUBLIC API
-            template <typename... Names>
-            constexpr decltype(auto) get(tag_t<names_t<Names...>>) &&
+            template <typename... Names, typename Defaults>
+            constexpr decltype(auto) get(tag_t<names_t<Names...>>, Defaults&& defaults) &&
             {
                 using kwargs_storage_t = storage<lookup_name<Names>...>;
                 return kwargs<kwargs_storage_t> {
                     construct_tag {},
                     kwargs_storage_t {
                         construct_tag {},
-                        NICKEL_MOVE(*this).get(tag_t<Names> {})...,
+                        NICKEL_MOVE(*this).get_or_default(tag_t<Names> {}, NICKEL_FWD(defaults))...,
                     },
                 };
             }
@@ -311,12 +332,14 @@ namespace nickel {
             constexpr decltype(auto) do_call(std::true_type) &&
             {
                 return Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_),
-                    NICKEL_MOVE(storage_).get(tag_t<Kwargs> {}));
+                    NICKEL_MOVE(defaults_),
+                    NICKEL_MOVE(storage_).get(tag_t<Kwargs> {}, NICKEL_MOVE(defaults_)));
             }
 
             constexpr decltype(auto) do_call(std::false_type) &&
             {
-                return Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_));
+                return Names::map_reduce(
+                    NICKEL_MOVE(fn_), NICKEL_MOVE(storage_), NICKEL_MOVE(defaults_));
             }
 
         public:
@@ -348,6 +371,12 @@ namespace nickel {
                     NICKEL_FWD(fn),
                 };
             }
+        };
+
+        template <typename Name, typename Value>
+        struct defaulted : named<Name, Value>
+        {
+            using name_type = Name;
         };
 
         struct name_group_to_partial_fn_tag
@@ -396,14 +425,39 @@ namespace nickel {
                 };
             }
         };
+
+        template <typename Storage>
+        constexpr auto make_default_storage(Storage&& storage)
+        {
+            return NICKEL_FWD(storage);
+        }
+
+        template <typename Storage, typename Name, typename Value, typename... DefaultedNames>
+        constexpr auto make_default_storage(
+            Storage&& storage, defaulted<Name, Value> defaulted_arg, DefaultedNames&&... names)
+        {
+            return make_default_storage(
+                NICKEL_FWD(storage).template set<Name>(NICKEL_MOVE(defaulted_arg).value),
+                NICKEL_FWD(names)...);
+        }
+
+        template <typename Storage, typename DefaultedName, typename... DefaultedNames>
+        constexpr auto make_default_storage(
+            Storage&& storage, DefaultedName&&, DefaultedNames&&... names)
+        {
+            return make_default_storage(NICKEL_FWD(storage), NICKEL_FWD(names)...);
+        }
     }
 
-    template <typename... Names>
-    constexpr auto name_group(Names...)
+    template <typename... DefaultedNames>
+    constexpr auto name_group(DefaultedNames&&... names)
     {
-        return detail::name_group<detail::storage<>, detail::names_t<>, detail::names_t<Names...>> {
+        auto defaults = detail::make_default_storage(
+            detail::storage<> {detail::construct_tag {}}, NICKEL_FWD(names)...);
+        return detail::name_group<decltype(defaults), detail::names_t<>,
+            detail::names_t<typename detail::remove_cvref_t<DefaultedNames>::name_type...>> {
             detail::construct_tag {},
-            detail::storage<> {detail::construct_tag {}},
+            NICKEL_MOVE(defaults),
         };
     }
 
@@ -432,6 +486,7 @@ namespace nickel {
 #define NICKEL_NAME(variable, name)                                                                \
     struct variable##_type                                                                         \
     {                                                                                              \
+        using name_type = variable##_type;                                                         \
         template <typename Derived>                                                                \
         struct set_type                                                                            \
         {                                                                                          \
@@ -471,8 +526,8 @@ namespace nickel {
         template <typename T>                                                                      \
         constexpr auto operator=(T&& value) const                                                  \
         {                                                                                          \
-            return 1; /*::nickel::detail::defaulted<variable##_type,                               \
-                 ::nickel::detail::remove_cvref_t<T>> {NICKEL_DETAIL_FWD(value)}; */               \
+            return ::nickel::detail::defaulted<variable##_type,                                    \
+                ::nickel::detail::remove_cvref_t<T>> {NICKEL_DETAIL_FWD(value)};                   \
         }                                                                                          \
     };                                                                                             \
                                                                                                    \
