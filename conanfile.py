@@ -29,7 +29,9 @@ class NickelConanFile(ConanFile):
 
     build_requires = (
         'Catch2/2.5.0@catchorg/stable',
+        'boost/1.74.0',
     )
+    default_options = {'boost:header_only': True}
     exports_sources = 'cmake/*', 'include/*', 'CMakeLists.txt'
 
     def _configure_cmake(self):

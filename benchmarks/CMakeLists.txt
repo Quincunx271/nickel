@@ -1,4 +1,6 @@
-find_package(Python3 COMPONENTS Interpreter)
+find_package(Boost REQUIRED)
+
+find_package(Python3 REQUIRED)
 execute_process(COMMAND "${Python3_EXECUTABLE}" -m venv --help
   RESULT_VARIABLE NO_VENV
   OUTPUT_QUIET
@@ -71,7 +73,7 @@ function(add_build_benchmarks dir link)
   include(${CMAKE_CURRENT_BINARY_DIR}/buildbench/Benchmarks.cmake)
 endfunction()
 
-add_build_benchmarks(buildbench nickel::nickel)
+add_build_benchmarks(buildbench "nickel::nickel;Boost::boost")
 file(GLOB_RECURSE benchs CONFIGURE_DEPENDS "buildbench/*.bench")
 
 add_custom_target(buildbench-visualize

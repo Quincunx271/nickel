@@ -1,4 +1,4 @@
-// nargs-multiuse: RAW, DESIG_INIT, MANUAL, NICKEL
+// nargs-multiuse: RAW, DESIG_INIT, MANUAL, NICKEL, BOOST
 // 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200
 
 {{#RAW}}
@@ -134,3 +134,45 @@ void do_something{{m}}() {
 {{/M}}
 
 {{/NICKEL}}
+
+
+{{#BOOST}}
+#include <boost/parameter.hpp>
+
+namespace names {
+    BOOST_PARAMETER_NAME(x1)
+    BOOST_PARAMETER_NAME(x2)
+    BOOST_PARAMETER_NAME(x3)
+    BOOST_PARAMETER_NAME(x4)
+    BOOST_PARAMETER_NAME(x5)
+
+    {{#M}}
+    BOOST_PARAMETER_FUNCTION(
+        (void),
+        function{{m}},
+        tag,
+        (required
+            (x1, *)
+            (x2, *)
+            (x3, *)
+            (x4, *)
+            (x5, *)
+        )
+    ) {}
+
+    {{^BASELINE}}
+    void do_something{{m}}() {
+        {{#N}}
+        function{{m}}(
+            _x1=0,
+            _x2=1,
+            _x3=2,
+            _x4=3,
+            _x5=4
+        );
+        {{/N}}
+    }
+    {{/BASELINE}}
+    {{/M}}
+}
+{{/BOOST}}
