@@ -1,8 +1,6 @@
 #pragma once
 
-#include <tuple>
 #include <type_traits>
-#include <utility>
 
 #define NICKEL_DETAIL_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
 #define NICKEL_DETAIL_MOVE(...)                                                                    \
@@ -10,6 +8,12 @@
 
 #define NICKEL_FWD NICKEL_DETAIL_FWD
 #define NICKEL_MOVE NICKEL_DETAIL_MOVE
+
+#ifdef __cpp_lib_type_trait_variable_templates
+#define NICKEL_IS_VOID(...) std::is_void_v<__VA_ARGS__>
+#else
+#define NICKEL_IS_VOID(...) std::is_void<__VA_ARGS__>::value
+#endif
 
 namespace nickel {
     namespace detail {
@@ -30,8 +34,13 @@ namespace nickel {
         template <bool Cond, typename A, typename B>
         using conditional_t = typename conditional<Cond>::template eval<A, B>;
 
+#ifdef __cpp_lib_remove_cvref
+        template <typename T>
+        using remove_cvref_t = std::remove_cvref_t<T>;
+#else
         template <typename T>
         using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
+#endif
 
         template <typename T, typename...>
         struct tag_t : tag_t<T>
@@ -185,7 +194,7 @@ namespace nickel {
         public:
             // Is there already an argument for the given name?
             template <typename Name>
-            static constexpr bool is_set = !std::is_void<find_named<Name, Nameds...>>::value;
+            static constexpr bool is_set = !NICKEL_IS_VOID(find_named<Name, Nameds...>);
 
             template <typename... FNameds>
             explicit constexpr storage(construct_tag, FNameds&&... nameds)
@@ -235,6 +244,17 @@ namespace nickel {
                 return NICKEL_FWD(NICKEL_MOVE(*this).lookup_named(id).value);
             }
 
+#ifdef __cpp_if_constexpr
+            template <typename Name, typename Defaults>
+            constexpr decltype(auto) get_or_default(tag_t<Name> id, Defaults&& defaults) &&
+            {
+                if constexpr (is_set<Name>) {
+                    return NICKEL_MOVE(*this).get(id);
+                } else {
+                    return NICKEL_FWD(defaults).get(id);
+                }
+            }
+#else
             template <typename Name, typename Defaults>
             constexpr decltype(auto) get_or_default_(
                 std::false_type, tag_t<Name> id, Defaults&& defaults) &&
@@ -254,6 +274,7 @@ namespace nickel {
                 return NICKEL_MOVE(*this).get_or_default_(
                     std::integral_constant<bool, is_set<Name>> {}, id, NICKEL_FWD(defaults));
             }
+#endif
 
             // NOT PUBLIC API
             template <typename... Names, typename Defaults>
@@ -328,18 +349,32 @@ namespace nickel {
                 };
             }
 
+#define NICKEL_CALL_WITH_KWARGS()                                                                  \
+    Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_), NICKEL_MOVE(defaults_),             \
+        NICKEL_MOVE(storage_).get(tag_t<Kwargs> {}, NICKEL_MOVE(defaults_)))
+#define NICKEL_CALL_NO_KWARGS()                                                                    \
+    Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_), NICKEL_MOVE(defaults_))
+
+#ifdef __cpp_if_constexpr
+            // Call the function with bound arguments.
+            constexpr decltype(auto) operator()() &&
+            {
+                if constexpr (Kwargs::count != 0) {
+                    return NICKEL_CALL_WITH_KWARGS();
+                } else {
+                    return NICKEL_CALL_NO_KWARGS();
+                }
+            }
+#else
         private:
             constexpr decltype(auto) do_call(std::true_type) &&
             {
-                return Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_),
-                    NICKEL_MOVE(defaults_),
-                    NICKEL_MOVE(storage_).get(tag_t<Kwargs> {}, NICKEL_MOVE(defaults_)));
+                return NICKEL_CALL_WITH_KWARGS();
             }
 
             constexpr decltype(auto) do_call(std::false_type) &&
             {
-                return Names::map_reduce(
-                    NICKEL_MOVE(fn_), NICKEL_MOVE(storage_), NICKEL_MOVE(defaults_));
+                return NICKEL_CALL_NO_KWARGS();
             }
 
         public:
@@ -349,6 +384,9 @@ namespace nickel {
                 return NICKEL_MOVE(*this).do_call(
                     std::integral_constant<bool, Kwargs::count != 0> {});
             }
+#endif
+#undef NICKEL_CALL_WITH_KWARGS
+#undef NICKEL_CALL_NO_KWARGS
         };
 
         template <typename Defaults, typename Kwargs, typename Names>
@@ -503,22 +541,22 @@ namespace nickel {
         template <typename Derived>                                                                \
         struct get_type                                                                            \
         {                                                                                          \
-            constexpr auto name() &                                                                \
+            constexpr decltype(auto) name() &                                                      \
             {                                                                                      \
                 return static_cast<Derived&>(*this)(                                               \
                     ::nickel::detail::get_tag {}, variable##_type {});                             \
             }                                                                                      \
-            constexpr auto name() const&                                                           \
+            constexpr decltype(auto) name() const&                                                 \
             {                                                                                      \
                 return static_cast<Derived const&>(*this)(                                         \
                     ::nickel::detail::get_tag {}, variable##_type {});                             \
             }                                                                                      \
-            constexpr auto name() &&                                                               \
+            constexpr decltype(auto) name() &&                                                     \
             {                                                                                      \
                 return static_cast<Derived&&>(*this)(                                              \
                     ::nickel::detail::get_tag {}, variable##_type {});                             \
             }                                                                                      \
-            constexpr auto name() const&&                                                          \
+            constexpr decltype(auto) name() const&&                                                \
             {                                                                                      \
                 return static_cast<Derived const&&>(*this)(                                        \
                     ::nickel::detail::get_tag {}, variable##_type {});                             \
@@ -537,15 +575,8 @@ namespace nickel {
                                                                                                    \
     constexpr auto variable = variable##_type                                                      \
     { }
-
-    // built-in names
-    namespace names {
-        NICKEL_NAME(w, w);
-        NICKEL_NAME(x, x);
-        NICKEL_NAME(y, y);
-        NICKEL_NAME(z, z);
-    }
 }
 
 #undef NICKEL_FWD
 #undef NICKEL_MOVE
+#undef NICKEL_IS_VOID

@@ -6,7 +6,11 @@
 #include <catch2/catch.hpp>
 
 namespace {
-    constexpr auto dim2 = nickel::name_group(nickel::names::x, nickel::names::y);
+    NICKEL_NAME(x, x);
+    NICKEL_NAME(y, y);
+    NICKEL_NAME(z, z);
+
+    constexpr auto dim2 = nickel::name_group(x, y);
 
     auto dist2()
     {
@@ -15,13 +19,12 @@ namespace {
 
     auto dist3()
     {
-        return nickel::wrap(nickel::kwargs_group(dim2), nickel::names::z)(
-            [](auto&& kwargs, double z) {
-                return dist2() //
-                    .x(dist2() //
-                        (std::forward<decltype(kwargs)>(kwargs))()) //
-                    .y(z)();
-            });
+        return nickel::wrap(nickel::kwargs_group(dim2), z)([](auto&& kwargs, double z) {
+            return dist2() //
+                .x(dist2() //
+                    (std::forward<decltype(kwargs)>(kwargs))()) //
+                .y(z)();
+        });
     }
 }
 

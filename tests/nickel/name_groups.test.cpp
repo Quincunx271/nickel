@@ -6,9 +6,13 @@
 #include <catch2/catch.hpp>
 
 namespace {
-    constexpr auto dimX = nickel::name_group(nickel::names::x);
+    NICKEL_NAME(x, x);
+    NICKEL_NAME(y, y);
+    NICKEL_NAME(z, z);
 
-    constexpr auto dim2 = nickel::name_group(dimX, nickel::names::y);
+    constexpr auto dimX = nickel::name_group(x);
+
+    constexpr auto dim2 = nickel::name_group(dimX, y);
 
     auto dist2()
     {
@@ -17,7 +21,7 @@ namespace {
 
     auto dist3()
     {
-        return nickel::wrap(dim2, nickel::names::z)(
+        return nickel::wrap(dim2, z)(
             [](double x, double y, double z) { return std::hypot(dist2().x(x).y(y)(), z); });
     }
 }
