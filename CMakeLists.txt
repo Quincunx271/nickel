@@ -14,6 +14,7 @@ is_root(is_root_project)
 set(NICKEL_DEVELOPER_DEFAULTS "${is_root_project}" CACHE BOOL "Default all options to developer-friendly values")
 
 option(BUILD_TESTING "Enable testing" ${NICKEL_DEVELOPER_DEFAULTS})
+option(BUILD_BENCHMARKS "Builds the benchmarks" OFF)
 option(NICKEL_TEST_COLOR "Force test color" OFF)
 
 if(BUILD_TESTING)
@@ -39,6 +40,11 @@ target_compile_features(nickel
 # Tests
 if(BUILD_TESTING)
   add_subdirectory(tests)
+endif()
+
+# Benchmarks
+if(BUILD_BENCHMARKS)
+  add_subdirectory(benchmarks)
 endif()
 
 # Install

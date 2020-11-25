@@ -1,0 +1,82 @@
+// nargs-decl: RAW, NICKEL, DESIG_INIT, MANUAL
+// 10, 50, 100, 150, 200, 250
+
+{{#RAW}}
+{{#M}}
+void function{{m}}(
+    {{#N}}
+    int x{{n}},
+    {{/N}}
+    int z
+);
+{{/M}}
+{{/RAW}}
+
+
+{{#DESIG_INIT}}
+struct args {
+{{#N}}
+    int x{{n}};
+{{/N}}
+    int z;
+};
+
+{{#M}}
+void function{{m}}(args);
+{{/M}}
+{{/DESIG_INIT}}
+
+
+{{#MANUAL}}
+struct args {
+{{#N}}
+    int _x{{n}};
+{{/N}}
+    int _z;
+
+    args& z(int z) {
+        _z = z;
+        return *this;
+    }
+
+{{#N}}
+    args& x{{n}}(int x{{n}}) {
+        _x{{n}} = x{{n}};
+        return *this;
+    }
+{{/N}}
+};
+
+{{#M}}
+void function{{m}}(args);
+{{/M}}
+{{/MANUAL}}
+
+
+{{#NICKEL}}
+#include <nickel/nickel.hpp>
+
+{{#N}}
+NICKEL_NAME(x{{n}}, x{{n}});
+{{/N}}
+NICKEL_NAME(z, z);
+
+{{#M}}
+auto function{{m}}() {
+    return nickel::wrap(
+        {{#N}}
+        x{{n}},
+        {{/N}}
+        z
+    )([](
+        {{#N}}
+        int x{{n}},
+        {{/N}}
+        int z
+    ) {
+        // Empty implementation
+    });
+}
+{{/M}}
+
+{{/NICKEL}}
