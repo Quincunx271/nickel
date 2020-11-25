@@ -1,0 +1,136 @@
+// nargs-multiuse: RAW, DESIG_INIT, MANUAL, NICKEL
+// 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200
+
+{{#RAW}}
+{{#M}}
+void function{{m}}(
+    int x1,
+    int x2,
+    int x3,
+    int x4,
+    int x5
+) {}
+
+{{^BASELINE}}
+void do_something{{m}}() {
+    {{#N}}
+    function{{m}}(0, 1, 2, 3, 4);
+    {{/N}}
+}
+{{/BASELINE}}
+{{/M}}
+{{/RAW}}
+
+
+{{#DESIG_INIT}}
+struct args {
+    int x1;
+    int x2;
+    int x3;
+    int x4;
+    int x5;
+};
+
+{{#M}}
+void function{{m}}(args) {}
+
+{{^BASELINE}}
+void do_something{{m}}() {
+    {{#N}}
+    function{{m}}({
+        .x1 = 0, .x2 = 1, .x3 = 2, .x4 = 3, .x5 = 4,
+    });
+    {{/N}}
+}
+{{/BASELINE}}
+{{/M}}
+{{/DESIG_INIT}}
+
+
+{{#MANUAL}}
+struct args {
+    int _x1;
+    int _x2;
+    int _x3;
+    int _x4;
+    int _x5;
+
+    args& x1(int x1) {
+        _x1 = x1;
+        return *this;
+    }
+
+    args& x2(int x2) {
+        _x2 = x2;
+        return *this;
+    }
+
+    args& x3(int x3) {
+        _x3 = x3;
+        return *this;
+    }
+
+    args& x4(int x4) {
+        _x4 = x4;
+        return *this;
+    }
+
+    args& x5(int x5) {
+        _x5 = x5;
+        return *this;
+    }
+};
+
+{{#M}}
+void function{{m}}(args) {}
+
+{{^BASELINE}}
+void do_something{{m}}() {
+    {{#N}}
+    function{{m}}(
+        args{}
+            .x1(0)
+            .x2(1)
+            .x3(2)
+            .x4(3)
+            .x5(4)
+    );
+    {{/N}}
+}
+{{/BASELINE}}
+{{/M}}
+{{/MANUAL}}
+
+
+{{#NICKEL}}
+#include <nickel/nickel.hpp>
+
+NICKEL_NAME(x1, x1);
+NICKEL_NAME(x2, x2);
+NICKEL_NAME(x3, x3);
+NICKEL_NAME(x4, x4);
+NICKEL_NAME(x5, x5);
+
+{{#M}}
+auto function{{m}}() {
+    return nickel::wrap(x1, x2, x3, x4, x5)([](int x1, int x2, int x3, int x4, int x5) {
+        // Empty implementation
+    });
+}
+
+{{^BASELINE}}
+void do_something{{m}}() {
+    {{#N}}
+    function{{m}}()
+        .x1(0)
+        .x2(1)
+        .x3(2)
+        .x4(3)
+        .x5(4)
+        ();
+    {{/N}}
+}
+{{/BASELINE}}
+{{/M}}
+
+{{/NICKEL}}

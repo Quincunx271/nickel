@@ -15,8 +15,10 @@ if __name__ == '__main__':
     for benchmark, bench_results in results.items():
         plt.ylabel('Time (ms)')
         plt.xlabel('N')
+        plt.title(benchmark)
 
         for which, which_results in bench_results.items():
-            plt.plot([x['n'] for x in which_results['results']], [(x['time'] - which_results['baseline']['time']) * 1e3 for x in which_results['results']], label=which_results['which'])
+            plt.plot([x['n'] for x in which_results['results']], [(x['time'] - x['baseline']['time']) * 1e3 for x in which_results['results']], label=which_results['which'])
 
+        plt.legend()
         plt.show()

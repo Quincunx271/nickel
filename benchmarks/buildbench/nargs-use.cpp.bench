@@ -1,7 +1,5 @@
-// nargs-decl: RAW, NICKEL, DESIG_INIT, MANUAL
-// 10, 50, 100, 150, 200, 250
-
-{{^BASELINE}}
+// nargs-use: RAW, NICKEL, DESIG_INIT, MANUAL
+// 10, 20, 30, 40, 50, 60, 70, 80, 90, 100
 
 {{#RAW}}
 {{#M}}
@@ -10,7 +8,18 @@ void function{{m}}(
     int x{{n}},
     {{/N}}
     int z
-);
+) {}
+
+{{^BASELINE}}
+void do_something{{m}}() {
+    function{{m}}(
+    {{#N}}
+        {{n}},
+    {{/N}}
+        0
+    );
+}
+{{/BASELINE}}
 {{/M}}
 {{/RAW}}
 
@@ -24,7 +33,18 @@ struct args {
 };
 
 {{#M}}
-void function{{m}}(args);
+void function{{m}}(args) {}
+
+{{^BASELINE}}
+void do_something{{m}}() {
+    function{{m}}({
+        {{#N}}
+        .x{{n}} = {{n}},
+        {{/N}}
+        .z = 0,
+    });
+}
+{{/BASELINE}}
 {{/M}}
 {{/DESIG_INIT}}
 
@@ -50,7 +70,19 @@ struct args {
 };
 
 {{#M}}
-void function{{m}}(args);
+void function{{m}}(args) {}
+
+{{^BASELINE}}
+void do_something{{m}}() {
+    function{{m}}(
+        args{}
+        {{#N}}
+        .x{{n}}({{n}})
+        {{/N}}
+        .z(0)
+    );
+}
+{{/BASELINE}}
 {{/M}}
 {{/MANUAL}}
 
@@ -79,8 +111,17 @@ auto function{{m}}() {
         // Empty implementation
     });
 }
+
+{{^BASELINE}}
+void do_something{{m}}() {
+    function{{m}}()
+        {{#N}}
+        .x{{n}}({{n}})
+        {{/N}}
+        .z(0)
+        ();
+}
+{{/BASELINE}}
 {{/M}}
 
 {{/NICKEL}}
-
-{{/BASELINE}}

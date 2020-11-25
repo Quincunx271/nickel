@@ -1,0 +1,26 @@
+// many-names: INTS, NICKEL
+// 10, 50, 100, 150, 200, 250, 300
+
+{{#INTS}}
+{{^BASELINE}}
+
+{{#M}}
+{{#N}}
+int i{{m}}_{{n}} = 0;
+{{/N}}
+{{/M}}
+
+{{/BASELINE}}
+{{/INTS}}
+
+{{#NICKEL}}
+#include <nickel/nickel.hpp>
+{{^BASELINE}}
+
+{{#M}}
+{{#N}}
+NICKEL_NAME(x{{m}}_{{n}}, x{{m}}_{{n}});
+{{/N}}
+{{/M}}
+{{/BASELINE}}
+{{/NICKEL}}

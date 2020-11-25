@@ -65,11 +65,11 @@ def generate(args):
         print(f'add_benchmark({name.strip()} "{os.path.abspath(benchmark)}" "{whichs}" "{ns}")')
 
 
-def evaluate_template(benchtempl, outputfile, config, m, n):
+def evaluate_template(benchtempl, outputfile, context, m, n):
     context = {
         'N': [{'n': x} for x in range(n)],
         'M': [{'m': x} for x in range(m)],
-        config: True,
+        **context,
     }
     with open(benchtempl, 'r') as f:
         result = chevron.render(f.read(), context)
@@ -78,8 +78,8 @@ def evaluate_template(benchtempl, outputfile, config, m, n):
         f.write(result)
 
 
-def estimate_runtime(measure, benchtempl, outputfile, config, n):
-    evaluate_template(benchtempl, outputfile, config, m=3, n=n)
+def estimate_runtime(measure, benchtempl, outputfile, context, n):
+    evaluate_template(benchtempl, outputfile, context, m=3, n=n)
     baseeval = measure(3, n)
     return baseeval['time']
 
@@ -96,6 +96,8 @@ def run(args):
 
     def measure(m, n):
         res = subprocess.run(runner, capture_output=True)
+        if res.returncode != 0:
+            print(res.stderr.decode('utf-8'), file=sys.stderr)
         res.check_returncode()
         subprocess.run(cmake_clean_target, stdout=subprocess.DEVNULL).check_returncode()
         results = json.loads(res.stdout)
@@ -122,7 +124,7 @@ def run(args):
         "results": ['''))
 
     for n in ns:
-        esttime = estimate_runtime(measure, args.benchfile, args.generated_file, config=args.which, n=n)
+        esttime = estimate_runtime(measure, args.benchfile, args.generated_file, context={args.which: True}, n=n)
 
         MAX_EST_TIME = 2.0
         MAX_EST_M = int(MAX_EST_TIME / esttime)
@@ -131,8 +133,12 @@ def run(args):
 
         M = max(MIN_M, min(MAX_EST_M, MAX_M))
 
-        evaluate_template(args.benchfile, args.generated_file, config=args.which, m=M, n=n)
+        evaluate_template(args.benchfile, args.generated_file, context={args.which: True}, m=M, n=n)
         results = measure(M, n)
+
+        evaluate_template(args.benchfile, args.generated_file, context={args.which: True, 'BASELINE': True}, m=M, n=n)
+        baseline_results = measure(M, n)
+        results['baseline'] = baseline_results
         bench_results['results'].append(results)
 
         print('        ', end='')
@@ -143,20 +149,6 @@ def run(args):
     print(dedent(f'''\
         ]
     }}'''))
-
-    BASELINE_M = 50
-    evaluate_template(args.benchfile, args.generated_file, config=args.which, m=BASELINE_M, n=0)
-    baseline_results = []
-    for _ in range(10):
-        baseline_results.append(measure(BASELINE_M, 0))
-
-    baseline_results = {
-        'm': 1,
-        'n': 0,
-        'time': min(x['time'] for x in baseline_results),
-        'memory': min(x['memory'] for x in baseline_results),
-    }
-    bench_results['baseline'] = baseline_results
 
     cumulative_results_f = os.path.join(args.workingdir, 'bench.results.pickle')
     if os.path.exists(cumulative_results_f):

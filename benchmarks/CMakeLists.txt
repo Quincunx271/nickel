@@ -21,6 +21,12 @@ if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/.venv.chevron.done)
   file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/.venv.chevron.done)
 endif()
 
+# Install matplotlib in the venv
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/.venv.matplotlib.done)
+execute_process(COMMAND ${CMAKE_CURRENT_BINARY_DIR}/venv/bin/pip3 install matplotlib)
+file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/.venv.matplotlib.done)
+endif()
+
 set(ARG_VALUES 0 10 20 30 40 50 60 70 80 90 100 150 200)
 set(REPEAT_COUNT 200)
 
@@ -66,31 +72,8 @@ function(add_build_benchmarks dir link)
 endfunction()
 
 add_build_benchmarks(buildbench nickel::nickel)
+file(GLOB_RECURSE benchs CONFIGURE_DEPENDS "buildbench/*.bench")
 
-# function(add_benchmark name benchf WHICH)
-#   foreach(VAL IN LISTS ARG_VALUES)
-#     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${benchf}.${WHICH}.${VAL}.cpp
-#       COMMAND ${BENCHMARK_PY} ${BENCHMARK_LIST}/compile.py
-#         ${CMAKE_CURRENT_SOURCE_DIR}/${benchf}
-#         ${CMAKE_CURRENT_BINARY_DIR}/${benchf}.${WHICH}.${VAL}.cpp
-#         ${VAL}
-#         ${WHICH}
-#         ${REPEAT_COUNT}
-#       DEPENDS ${BENCHMARK_LIST}/compile.py ${CMAKE_CURRENT_SOURCE_DIR}/${benchf}
-#     )
-#     add_library(${name}-${WHICH}-${VAL}-lib OBJECT EXCLUDE_FROM_ALL ${CMAKE_CURRENT_BINARY_DIR}/${benchf}.${WHICH}.${VAL}.cpp)
-#     target_link_libraries(${name}-${WHICH}-${VAL}-lib nickel::nickel)
-
-#     add_custom_target(${name}-${WHICH}-${VAL}
-#       COMMAND ${CMAKE_COMMAND} -E remove -f $<TARGET_OBJECTS:${name}-${WHICH}-${VAL}-lib>
-#       COMMAND ${CMAKE_COMMAND} -E time ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target ${name}-${WHICH}-${VAL}-lib
-#       DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${benchf}.${WHICH}.${VAL}.cpp
-#     )
-#   endforeach()
-# endfunction()
-
-# file(GLOB benchs CONFIGURE_DEPENDS "bench/*")
-
-# foreach(bench IN LISTS benchs)
-#   add_subdirectory(${bench})
-# endforeach()
+add_custom_target(buildbench-visualize
+  COMMAND ${BENCHMARK_PY} ${BENCHMARK_LIST}/visualize.py ${CMAKE_CURRENT_BINARY_DIR}/buildbench/bench.results.pickle
+)
