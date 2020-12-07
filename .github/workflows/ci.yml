@@ -12,9 +12,9 @@ jobs:
 
     strategy:
       matrix:
-        cxx: [g++-10] # clang++-9 is currently unsupported by pmm
+        cxx: [g++-10, clang++-9]
         std: [14, 17, 20]
-        build_type: [Debug, Release]
+        build_type: [Debug]
 
     steps:
     - name: Print Configuration
@@ -27,6 +27,7 @@ jobs:
 
     - name: Configure
       run: cmake -S. -B${{ runner.workspace }}/build
+            -DPMM_URL=https://raw.githubusercontent.com/vector-of-bool/pmm/342ae926bd14689d5d2b627d4b74de979229d216/pmm/
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
@@ -74,7 +75,7 @@ jobs:
     strategy:
       matrix:
         std: [14, 17, 20]
-        build_type: [Debug, Release]
+        build_type: [Debug]
 
     steps:
     - name: Print Configuration
