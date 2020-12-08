@@ -25,9 +25,14 @@ jobs:
       shell: python
       run: |
         import os
+        import re
 
         if '${{ github.event_name }}' == 'release':
-          print('::set-output name=CONAN_VERSION::' + os.environ['GITHUB_REF'])
+          ref = os.environ['GITHUB_REF']
+          assert ref.startswith('refs/tags/v')
+          version = ref[len('refs/tags/v'):]
+          assert re.match(r'\d+\.\d+\.\d+', version)
+          print('::set-output name=CONAN_VERSION::' + version)
           print('::set-output name=CONAN_CHANNEL::stable')
         else:
           assert '${{ github.event_name }}' == 'push'
