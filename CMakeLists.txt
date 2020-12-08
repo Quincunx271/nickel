@@ -16,6 +16,7 @@ set(NICKEL_DEVELOPER_DEFAULTS "${is_root_project}" CACHE BOOL "Default all optio
 option(BUILD_TESTING "Enable testing" ${NICKEL_DEVELOPER_DEFAULTS})
 option(BUILD_BENCHMARKS "Builds the benchmarks" OFF)
 option(NICKEL_TEST_COLOR "Force test color" OFF)
+option(NICKEL_WARNINGS_AS_ERRORS "Turn on -Werror or equivalent" OFF)
 
 if(BUILD_TESTING)
   enable_testing()
