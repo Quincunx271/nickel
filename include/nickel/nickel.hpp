@@ -90,7 +90,7 @@ namespace nickel {
         template <typename... Names>
         struct names_t
         {
-            static constexpr bool count = sizeof...(Names);
+            static constexpr std::size_t count = sizeof...(Names);
 
             template <template <typename...> class MFn>
             using apply = MFn<Names...>;
@@ -356,7 +356,7 @@ namespace nickel {
 
 #define NICKEL_CALL_WITH_KWARGS()                                                                  \
     Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_), NICKEL_MOVE(defaults_),             \
-        NICKEL_MOVE(storage_).get(tag_t<Kwargs> {}, NICKEL_MOVE(defaults_)))
+        NICKEL_MOVE(storage_).get(detail::tag_t<Kwargs> {}, NICKEL_MOVE(defaults_)))
 #define NICKEL_CALL_NO_KWARGS()                                                                    \
     Names::map_reduce(NICKEL_MOVE(fn_), NICKEL_MOVE(storage_), NICKEL_MOVE(defaults_))
 
