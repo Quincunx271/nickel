@@ -24,6 +24,7 @@ class NickelConanFile(ConanFile):
     version = cmakelists_version()
     description = cmakelists_description()
     url = 'https://github.com/Quincunx271/nickel'
+    license = 'BSL-1.0'
     no_copy_source = True
     generators = 'cmake'
 
@@ -32,11 +33,13 @@ class NickelConanFile(ConanFile):
         'boost/1.74.0',
     )
     default_options = {'boost:header_only': True}
-    exports_sources = 'cmake/*', 'include/*', 'CMakeLists.txt'
+    exports_sources = 'pmm.cmake', 'cmake/*', 'include/*', 'CMakeLists.txt', 'LICENSE.txt'
 
     def _configure_cmake(self):
         cmake = CMake(self)
-        cmake.configure()
+        cmake.configure(defs={
+            'BUILD_TESTING': False,
+        })
         return cmake
 
     def build(self):
@@ -46,3 +49,4 @@ class NickelConanFile(ConanFile):
     def package(self):
         cmake = self._configure_cmake()
         cmake.install()
+        self.copy('LICENSE.txt', 'licenses')

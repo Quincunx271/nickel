@@ -79,5 +79,6 @@ write_basic_package_version_file(
 
 install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/nickelConfigVersion.cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/nickelConfig.cmake"
   DESTINATION "${INSTALL_CONFIGDIR}"
 )
