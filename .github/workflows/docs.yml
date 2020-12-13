@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        cxx: [g++-9]
+        cxx: [g++-10]
         std: [17]
         build_type: [Debug]
 
@@ -56,6 +56,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}           \
           -DCMAKE_CXX_STANDARD=${{ matrix.std }}           \
           -DNICKEL_WARNINGS_AS_ERRORS=ON                   \
+          -DBUILD_TESTING=OFF                              \
           -DNICKEL_BUILD_DOCS=ON                           \
           "-DCMAKE_INSTALL_PREFIX=${{ runner.workspace }}/build/install"
 
@@ -75,12 +76,14 @@ jobs:
         git config --local user.email "$(git log -n 1 --pretty=format:'%ae')"
         git config --local user.name 'GitHub Actions'
 
-        rm -r main
+        rm -r '${{ steps.config.outputs.DOCS_DIR }}'
         cp -r '${{ runner.workspace }}/build/install/share/doc/nickel/html' '${{ steps.config.outputs.DOCS_DIR }}'
-
-        git add -A
-
-        if ! git diff --exit-code; then
+        
+        if [[ `git status --porcelain` ]]; then
+          echo "Changes found"
+          git add -A
           git commit -m '${{ steps.config.outputs.COMMIT_MSG }}'
           git push
+        else
+          echo "No changes found"
         fi
