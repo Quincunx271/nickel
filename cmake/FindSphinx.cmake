@@ -64,6 +64,7 @@ function(add_sphinx_target NAME)
   endforeach()
 
   list(APPEND cmd_args
+    -d ${CMAKE_CURRENT_BINARY_DIR}/${ARG_BUILDER}.doctrees
     -W
     -n
     -j auto
