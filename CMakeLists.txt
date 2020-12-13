@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.15)
 
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -15,6 +15,7 @@ set(NICKEL_DEVELOPER_DEFAULTS "${is_root_project}" CACHE BOOL "Default all optio
 
 option(BUILD_TESTING "Enable testing" ${NICKEL_DEVELOPER_DEFAULTS})
 option(BUILD_BENCHMARKS "Builds the benchmarks" OFF)
+option(NICKEL_BUILD_DOCS "Build the documentation" OFF)
 option(NICKEL_TEST_COLOR "Force test color" OFF)
 option(NICKEL_WARNINGS_AS_ERRORS "Turn on -Werror or equivalent" OFF)
 
@@ -37,6 +38,11 @@ target_compile_features(nickel
   INTERFACE
     cxx_std_14
 )
+
+# Docs
+if(NICKEL_BUILD_DOCS)
+  add_subdirectory(docs)
+endif()
 
 # Tests
 if(BUILD_TESTING)
@@ -83,3 +89,11 @@ install(FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/nickelConfig.cmake"
   DESTINATION "${INSTALL_CONFIGDIR}"
 )
+
+if(NICKEL_BUILD_DOCS)
+  get_property(docs_dir TARGET docs PROPERTY SPHINX_OUTPUT_DIRECTORY)
+
+  install(DIRECTORY ${docs_dir}
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+  )
+endif()
