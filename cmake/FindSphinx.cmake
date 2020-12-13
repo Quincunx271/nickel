@@ -1,6 +1,11 @@
 find_program(Sphinx_EXECUTABLE
   NAMES sphinx-build
+  REQUIRED
 )
+
+if(NOT Sphinx_FIND_QUIET)
+  message(STATUS "Found sphinx-build -- ${Sphinx_EXECUTABLE}")
+endif()
 
 execute_process(COMMAND ${Sphinx_EXECUTABLE} --version
   OUTPUT_VARIABLE Sphinx_VERSION_MESSAGE

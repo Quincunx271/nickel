@@ -1,0 +1,86 @@
+name: Publish Docs
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+jobs:
+  publish-docs:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        cxx: [g++-9]
+        std: [17]
+        build_type: [Debug]
+
+    steps:
+    - name: Install Sphinx
+      run: |
+        pip3 install --user sphinx
+        source ~/.profile
+        sphinx-build --version
+        which sphinx-build
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Get Git Info
+      id: gitinfo
+      run: |
+        echo "::set-output name=COMMIT_HASH::$(git rev-parse --short HEAD)"
+
+    - name: Configure Docs
+      id: config
+      shell: python
+      run: |
+        import os
+
+        if '${{ github.event_name }}' == 'release':
+          release = os.environ['GITHUB_REF'].split('/')[-1]
+          print('::set-output name=DOCS_DIR::' + release)
+          print('::set-output name=COMMIT_MSG::Publish docs for release ' + release)
+        else:
+          assert '${{ github.event_name }}' == 'push'
+          print('::set-output name=DOCS_DIR::main')
+          print('::set-output name=COMMIT_MSG::Update docs for commit ' + '${{ steps.gitinfo.outputs.COMMIT_HASH }}')
+
+    - name: Configure CMake
+      run: |
+        source ~/.profile
+        cmake -S. -B${{ runner.workspace }}/build          \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}      \
+          -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}           \
+          -DCMAKE_CXX_STANDARD=${{ matrix.std }}           \
+          -DNICKEL_WARNINGS_AS_ERRORS=ON                   \
+          -DNICKEL_BUILD_DOCS=ON                           \
+          "-DCMAKE_INSTALL_PREFIX=${{ runner.workspace }}/build/install"
+
+    - name: Build Docs
+      working-directory: ${{ runner.workspace }}/build
+      run: cmake --build . --config ${{ matrix.build_type }} --target docs
+
+    - name: Install
+      working-directory: ${{ runner.workspace }}/build
+      run: cmake --build . --config ${{ matrix.build_type }} -j2 --target install
+
+    - name: Publish docs
+      run: |
+        git checkout gh-pages
+        # Git requires user email and name to do commits.
+        # Set user email to the email of the last commit, as that's about the best we can do
+        git config --local user.email "$(git log -n 1 --pretty=format:'%ae')"
+        git config --local user.name 'GitHub Actions'
+
+        rm -r main
+        cp -r '${{ runner.workspace }}/build/install/share/doc/nickel/html' '${{ steps.config.outputs.DOCS_DIR }}'
+
+        git add -A
+
+        if ! git diff --exit-code; then
+          git commit -m '${{ steps.config.outputs.COMMIT_MSG }}'
+          git push
+        fi
