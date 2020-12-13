@@ -1,20 +1,20 @@
-.. Nickel documentation master file, created by
-   sphinx-quickstart on Sat Dec 12 22:14:58 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Nickel
+======
 
-Welcome to Nickel's documentation!
-==================================
+Nickel is a library for providing named parameters on functions.
+
+See :doc:`tutorial/index`.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   tutorial/index
+   reference/index
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`

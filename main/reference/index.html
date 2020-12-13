@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reference &#8212; Nickel  documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pyramid.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Usage for an Ordinary Function" href="../tutorial/ordinary-usage.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../tutorial/ordinary-usage.html" title="Usage for an Ordinary Function"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Nickel  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Reference</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="reference">
+<h1>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="declaring-names">
+<h2>Declaring Names<a class="headerlink" href="#declaring-names" title="Permalink to this headline">¶</a></h2>
+<p>Using <code class="docutils literal notranslate"><span class="pre">NICKEL_NAME(...)</span></code> at namespace scope:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Declares a variable `variable_name` which provides a</span>
+<span class="c1">// .method_name(...) name.</span>
+<span class="n">NICKEL_NAME</span><span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">method_name</span><span class="p">);</span>
+
+<span class="c1">// The variable can have the same name as the method.</span>
+<span class="n">NICKEL_NAME</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="declaring-nickel-wrapped-function">
+<h2>Declaring Nickel-Wrapped Function<a class="headerlink" href="#declaring-nickel-wrapped-function" title="Permalink to this headline">¶</a></h2>
+<p>Make a function wrapping a call to <code class="docutils literal notranslate"><span class="pre">nickel::wrap(...)</span></code>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">my_function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(...)([](...)</span> <span class="p">{</span> <span class="p">...</span> <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="declaring-named-parameters">
+<h2>Declaring Named Parameters<a class="headerlink" href="#declaring-named-parameters" title="Permalink to this headline">¶</a></h2>
+<p>Pass names to <code class="docutils literal notranslate"><span class="pre">nickel::wrap(...)</span></code>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">my_function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// x_name and y previously declared as:</span>
+    <span class="c1">// NICKEL_NAME(x_name, x);</span>
+    <span class="c1">// NICKEL_NAME(y, y);</span>
+    <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">x_name</span><span class="p">,</span> <span class="n">y</span><span class="p">)(</span>
+        <span class="c1">// Order of args to nickel::wrap(...)</span>
+        <span class="c1">// is the order that the arguments are passed to the function:</span>
+        <span class="p">[](</span><span class="k">auto</span> <span class="n">x</span><span class="p">,</span> <span class="k">auto</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+        <span class="p">...</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="declaring-positional-parameters">
+<h2>Declaring Positional Parameters<a class="headerlink" href="#declaring-positional-parameters" title="Permalink to this headline">¶</a></h2>
+<p>Add parameters to the wrapper function and capture them in the lambda:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">my_function</span><span class="p">(</span><span class="kt">int</span> <span class="n">positional1</span><span class="p">,</span> <span class="kt">int</span> <span class="k">const</span><span class="o">&amp;</span> <span class="n">ref</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">x_name</span><span class="p">,</span> <span class="n">y</span><span class="p">)(</span>
+        <span class="p">[</span><span class="n">positional1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ref</span><span class="p">](</span><span class="k">auto</span> <span class="n">x</span><span class="p">,</span> <span class="k">auto</span><span class="o">&amp;</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// ref doesn&#39;t dangle even though we captured it by reference.</span>
+        <span class="c1">// Even if it was assigned to a temporary, that temporary will live</span>
+        <span class="c1">// until after this lambda is called.</span>
+
+        <span class="c1">// As can be seen by y&#39;s declaration, it expects to be a reference.</span>
+        <span class="c1">// This is also supported.</span>
+        <span class="p">...</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="adding-default-arguments">
+<h2>Adding Default Arguments<a class="headerlink" href="#adding-default-arguments" title="Permalink to this headline">¶</a></h2>
+<p>Add default arguments with <cite>name_variable = default_arg</cite>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">logarithm</span><span class="p">(</span><span class="kt">double</span> <span class="n">arg</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">base</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">)([</span><span class="n">arg</span><span class="p">](</span><span class="kt">double</span> <span class="n">base</span><span class="p">)</span> <span class="p">{</span>
+        <span class="p">...</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="calling-a-nickel-wrapped-function">
+<h2>Calling a Nickel-Wrapped Function<a class="headerlink" href="#calling-a-nickel-wrapped-function" title="Permalink to this headline">¶</a></h2>
+<p>Call a Nickel-wrapped function by initiating, setting arguments, then finishing the call:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span> <span class="n">result</span> <span class="o">=</span> <span class="n">wrapped_function</span><span class="p">(</span><span class="n">positional_arg</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">// initiate</span>
+    <span class="p">.</span><span class="n">param1</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>      <span class="c1">// set args</span>
+    <span class="p">.</span><span class="n">param2</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>    <span class="c1">// set args</span>
+    <span class="p">();</span>             <span class="c1">// finish the call</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Setting the arguments can be done in any order.
+You may also skip setting any arguments that have default arguments.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Do NOT store a partial result.
+Once you initiate a function call, make sure you finish the call in the same expression.</p>
+</div>
+</div>
+<div class="section" id="declaring-a-name-group">
+<h2>Declaring a Name Group<a class="headerlink" href="#declaring-a-name-group" title="Permalink to this headline">¶</a></h2>
+<p>…</p>
+</div>
+<div class="section" id="using-kwargs">
+<h2>Using Kwargs<a class="headerlink" href="#using-kwargs" title="Permalink to this headline">¶</a></h2>
+<p>…</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Reference</a><ul>
+<li><a class="reference internal" href="#declaring-names">Declaring Names</a></li>
+<li><a class="reference internal" href="#declaring-nickel-wrapped-function">Declaring Nickel-Wrapped Function</a></li>
+<li><a class="reference internal" href="#declaring-named-parameters">Declaring Named Parameters</a></li>
+<li><a class="reference internal" href="#declaring-positional-parameters">Declaring Positional Parameters</a></li>
+<li><a class="reference internal" href="#adding-default-arguments">Adding Default Arguments</a></li>
+<li><a class="reference internal" href="#calling-a-nickel-wrapped-function">Calling a Nickel-Wrapped Function</a></li>
+<li><a class="reference internal" href="#declaring-a-name-group">Declaring a Name Group</a></li>
+<li><a class="reference internal" href="#using-kwargs">Using Kwargs</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../tutorial/ordinary-usage.html"
+                        title="previous chapter">Usage for an Ordinary Function</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/reference/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../tutorial/ordinary-usage.html" title="Usage for an Ordinary Function"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Nickel  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Reference</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Justin Bassett.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>
