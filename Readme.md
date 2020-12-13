@@ -28,6 +28,6 @@ int foo() {
 }
 ```
 
-## TODO:
+## Documentation
 
-* Default values with `nickel::wrap(width_name = 42, height_name)`
+See the documentation at: https://quincunx271.github.io/nickel/
