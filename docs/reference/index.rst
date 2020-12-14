@@ -1,6 +1,11 @@
 Reference
 =========
 
+.. PERMALINK is the second one in these pairs
+
+.. _declaring-names:
+.. _name-decl:
+
 Declaring Names
 ---------------
 
@@ -15,6 +20,8 @@ Using ``NICKEL_NAME(...)`` at namespace scope:
     // The variable can have the same name as the method.
     NICKEL_NAME(name, name);
 
+.. _declaring-nickel-wrapped-function:
+.. _fn-decl:
 
 Declaring Nickel-Wrapped Function
 ---------------------------------
@@ -27,6 +34,8 @@ Make a function wrapping a call to ``nickel::wrap(...)``:
         return nickel::wrap(...)([](...) { ... });
     }
 
+.. _declaring-named-parameters:
+.. _named-param-decl:
 
 Declaring Named Parameters
 --------------------------
@@ -47,6 +56,8 @@ Pass names to ``nickel::wrap(...)``:
             });
     }
 
+.. _declaring-positional-parameters:
+.. _pos-param-decl:
 
 Declaring Positional Parameters
 -------------------------------
@@ -68,6 +79,8 @@ Add parameters to the wrapper function and capture them in the lambda:
             });
     }
 
+.. _adding-default-arguments:
+.. _default-args:
 
 Adding Default Arguments
 ------------------------
@@ -82,6 +95,8 @@ Add default arguments with `name_variable = default_arg`:
         });
     }
 
+.. _calling-a-nickel-wrapped-function:
+.. _nickel-call:
 
 Calling a Nickel-Wrapped Function
 ---------------------------------
@@ -105,6 +120,8 @@ Call a Nickel-wrapped function by initiating, setting arguments, then finishing 
     Do NOT store a partial result.
     Once you initiate a function call, make sure you finish the call in the same expression.
 
+.. _declaring-a-name-group:
+.. _name-group:
 
 Declaring a Name Group
 ----------------------
@@ -124,6 +141,9 @@ Default arguments may also be specified via the name group:
                 ...
             });
     }
+
+.. _using-kwargs:
+.. _kwargs:
 
 Using Kwargs
 ------------
