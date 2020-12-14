@@ -11,6 +11,7 @@ See :doc:`tutorial/index`.
 
    tutorial/index
    reference/index
+   comparison
 
 
 Indices and tables
