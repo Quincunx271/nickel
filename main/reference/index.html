@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Comparison With Other Named Parameters Solutions" href="../comparison.html" />
-    <link rel="prev" title="Usage for an Ordinary Function" href="../tutorial/ordinary-usage.html" />
+    <link rel="prev" title="Using Nickel to Steal Members" href="../tutorial/advanced.html" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <!--[if lte IE 6]>
@@ -35,7 +35,7 @@
           <a href="../comparison.html" title="Comparison With Other Named Parameters Solutions"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../tutorial/ordinary-usage.html" title="Usage for an Ordinary Function"
+          <a href="../tutorial/advanced.html" title="Using Nickel to Steal Members"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">Nickel  documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Reference</a></li> 
@@ -250,6 +250,42 @@ It is recommended to use a tuple-like type for default arguments on multivalued 
 </pre></div>
 </div>
 </div>
+<div class="section" id="nickel-steal">
+<span id="using-nickel-to-steal-members"></span><span id="id10"></span><h3>Using Nickel to Steal Members<a class="headerlink" href="#nickel-steal" title="Permalink to this headline">¶</a></h3>
+<p>Use <code class="docutils literal notranslate"><span class="pre">nickel::steal(...)</span></code> to make a function that allows members to be stolen:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyCustomType</span> <span class="p">{</span>
+<span class="k">private</span><span class="o">:</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">name</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">ids</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">memory</span><span class="p">;</span>
+
+<span class="k">public</span><span class="o">:</span>
+    <span class="k">auto</span> <span class="n">steal</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">steal</span><span class="p">(</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">),</span>
+            <span class="c1">// Each name must be given a default argument of the pointer-to-member-data</span>
+            <span class="n">name_name</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">MyCustomType</span><span class="o">::</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">ids_name</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">MyCustomType</span><span class="o">::</span><span class="n">ids</span><span class="p">,</span>
+            <span class="n">memory_name</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">MyCustomType</span><span class="o">::</span><span class="n">memory</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>Currently, member access is only supported for pointer-to-member-data.</p>
+<p>When users evaluate the <code class="docutils literal notranslate"><span class="pre">steal()</span></code> function, they will get a tuple of the requested members
+in the order that they request the members in:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">memory</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">ids</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">tie</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">object</span><span class="p">).</span><span class="n">steal</span><span class="p">()</span>
+    <span class="p">.</span><span class="n">memory</span><span class="p">()</span>
+    <span class="p">.</span><span class="n">ids</span><span class="p">()();</span>
+</pre></div>
+</div>
+<p>However, if they request only a single member, there will be no tuple:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">memory</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">object</span><span class="p">).</span><span class="n">steal</span><span class="p">().</span><span class="n">memory</span><span class="p">()();</span>
+</pre></div>
+</div>
+</div>
 </div>
 </div>
 
@@ -280,6 +316,7 @@ It is recommended to use a tuple-like type for default arguments on multivalued 
 </li>
 <li><a class="reference internal" href="#experimental-features">Experimental Features</a><ul>
 <li><a class="reference internal" href="#multivalued-param-decl">Declaring Multivalued Parameters</a></li>
+<li><a class="reference internal" href="#nickel-steal">Using Nickel to Steal Members</a></li>
 </ul>
 </li>
 </ul>
@@ -287,8 +324,8 @@ It is recommended to use a tuple-like type for default arguments on multivalued 
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../tutorial/ordinary-usage.html"
-                        title="previous chapter">Usage for an Ordinary Function</a></p>
+  <p class="topless"><a href="../tutorial/advanced.html"
+                        title="previous chapter">Using Nickel to Steal Members</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="../comparison.html"
                         title="next chapter">Comparison With Other Named Parameters Solutions</a></p>
@@ -323,7 +360,7 @@ It is recommended to use a tuple-like type for default arguments on multivalued 
           <a href="../comparison.html" title="Comparison With Other Named Parameters Solutions"
              >next</a> |</li>
         <li class="right" >
-          <a href="../tutorial/ordinary-usage.html" title="Usage for an Ordinary Function"
+          <a href="../tutorial/advanced.html" title="Using Nickel to Steal Members"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">Nickel  documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Reference</a></li> 
