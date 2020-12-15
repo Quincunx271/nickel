@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <type_traits>
 
 #define NICKEL_DETAIL_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
@@ -55,6 +56,12 @@ namespace nickel {
         struct tag_t<T>
         {
             using type = T;
+        };
+
+        template <int N>
+        struct int_t
+        {
+            static constexpr int value = N;
         };
 
         template <typename... Ts>
@@ -368,10 +375,25 @@ namespace nickel {
                 , fn_ {NICKEL_FWD(fn)}
             { }
 
-            // Bind the name to the argument.
+            // Bind the name to the multi-valued argument.
+            // NOT PUBLIC API
+            template <typename Name, int N, typename... Ts>
+            constexpr auto operator()(set_tag, Name, int_t<N>, Ts&&... values) &&
+            {
+                using NewStorage = decltype(NICKEL_MOVE(storage_).template _set_value<Name>(
+                    set_tag {}, std::tuple<Ts&&...>(NICKEL_FWD(values)...)));
+                return wrapped_fn<Defaults, NewStorage, remove_cvref_t<Fn>, Kwargs, Names> {
+                    NICKEL_MOVE(defaults_),
+                    NICKEL_MOVE(storage_).template _set_value<Name>(
+                        set_tag {}, std::tuple<Ts&&...>(NICKEL_FWD(values)...)),
+                    NICKEL_MOVE(fn_),
+                };
+            }
+
+            // Bind the name to the single argument.
             // NOT PUBLIC API
             template <typename Name, typename T>
-            constexpr auto operator()(set_tag, Name, T&& value) &&
+            constexpr auto operator()(set_tag, Name, int_t<-1>, T&& value) &&
             {
                 using NewStorage
                     = decltype(NICKEL_MOVE(storage_).template set<Name>(NICKEL_FWD(value)));
@@ -577,17 +599,21 @@ namespace nickel {
 // NICKEL_NAME(variable, name) generates a `variable` which has a `.name()`
 // named function
 #define NICKEL_NAME(variable, name)                                                                \
+    template <int N = -1>                                                                          \
     struct variable##_type                                                                         \
     {                                                                                              \
         using name_type = variable##_type;                                                         \
         template <typename Derived>                                                                \
         struct set_type                                                                            \
         {                                                                                          \
-            template <typename T>                                                                  \
-            constexpr auto name(T&& value) &&                                                      \
+            template <typename... Ts>                                                              \
+            constexpr auto name(Ts&&... values) &&                                                 \
             {                                                                                      \
-                return static_cast<Derived&&>(*this)(                                              \
-                    ::nickel::detail::set_tag {}, variable##_type {}, NICKEL_DETAIL_FWD(value));   \
+                static_assert(sizeof...(Ts) == N || sizeof...(Ts) == 1 && N == -1,                 \
+                    "Must call the function with the specified arguments: " #name);                \
+                return static_cast<Derived&&>(*this)(::nickel::detail::set_tag {},                 \
+                    variable##_type {}, ::nickel::detail::int_t<N> {},                             \
+                    NICKEL_DETAIL_FWD(values)...);                                                 \
             }                                                                                      \
         };                                                                                         \
                                                                                                    \
@@ -624,9 +650,16 @@ namespace nickel {
                 NICKEL_DETAIL_FWD(value),                                                          \
             };                                                                                     \
         }                                                                                          \
+                                                                                                   \
+        template <int NArgs>                                                                       \
+        constexpr auto multivalued() const -> variable##_type<NArgs>                               \
+        {                                                                                          \
+            static_assert(NArgs >= 0, "Cannot ask for a negative number of args");                 \
+            return {};                                                                             \
+        }                                                                                          \
     };                                                                                             \
                                                                                                    \
-    constexpr auto variable = variable##_type                                                      \
+    constexpr auto variable = variable##_type<>                                                    \
     { }
 }
 
