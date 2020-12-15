@@ -95,6 +95,38 @@ Add default arguments with `name_variable = default_arg`:
         });
     }
 
+.. deferred-default-arguments is the perma-target:
+
+Deferred Default Arguments
+--------------------------
+
+Default arguments can have their evaluation deferred with
+  ``name_variable = nickel::deferred([] { return value; })``.
+This will prevent evaluation if the user provides a value for the argument
+  instead of relying on the default value:
+
+.. code:: c++
+
+    using namespace std::string_literals;
+
+    constexpr auto say_hello() {
+        return nickel::wrap(
+            prefix = nickel::deferred([] { return "Some long string which doesn't fit in the SSO"s; }))
+            ([arg](auto const& prefix) {
+                ...
+            });
+    }
+
+    ...
+
+    // Does not pay the cost of constructing the long string
+    say_hello()
+        .prefix("Hello")
+        ();
+
+    // Still defaults to the default argument
+    say_hello()();
+
 .. _calling-a-nickel-wrapped-function:
 .. _nickel-call:
 

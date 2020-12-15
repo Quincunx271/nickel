@@ -36,3 +36,27 @@ TEST_CASE("Default arguments work")
     CHECK(::my_log(operand)() == std::log10(operand));
     CHECK(::my_log(operand).base(2)() == std::log(operand) / std::log(2));
 }
+
+TEST_CASE("Deferred default arguments remain unevaluated if unused")
+{
+    int modify_checker = 0;
+
+    auto test = [&] {
+        // Note: Very poor practice. Don't modify things in deferred default values.
+        return nickel::wrap(base = nickel::deferred([modify = &modify_checker] {
+            *modify = 1;
+            return 1;
+        }))([](int value) {
+            return value; //
+        });
+    };
+
+    auto result = test().base(42)();
+    CHECK(result == 42);
+    CHECK(modify_checker == 0);
+
+    modify_checker = 0;
+    result = test()();
+    CHECK(result == 1);
+    CHECK(modify_checker == 1);
+}

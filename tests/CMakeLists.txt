@@ -11,12 +11,24 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
   add_compile_options(
     -Wall -Wextra -Wpedantic
+    -fsanitize=address
+    -fsanitize=undefined
     $<$<BOOL:${werr}>:-Werror>
+  )
+  add_link_options(
+    -fsanitize=address
+    -fsanitize=undefined
   )
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   add_compile_options(
     -Wall -Wextra -Wpedantic
+    -fsanitize=address
+    -fsanitize=undefined
     $<$<BOOL:${werr}>:-Werror>
+  )
+  add_link_options(
+    -fsanitize=address
+    -fsanitize=undefined
   )
 endif()
 

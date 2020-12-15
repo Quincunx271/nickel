@@ -189,6 +189,35 @@ namespace nickel {
             }
         };
 
+        template <typename Lambda>
+        struct deferred : Lambda
+        {
+            template <typename FLambda>
+            constexpr explicit deferred(construct_tag, FLambda&& fn)
+                : Lambda(NICKEL_FWD(fn))
+            { }
+
+            using Lambda::operator();
+        };
+
+        template <typename T>
+        constexpr auto get_default(T&& value) -> T&&
+        {
+            return NICKEL_FWD(value);
+        }
+
+        template <typename Lambda>
+        constexpr auto get_default(deferred<Lambda>&& fn) -> decltype(auto)
+        {
+            return NICKEL_MOVE(fn)();
+        }
+
+        template <typename Lambda>
+        constexpr auto get_default(deferred<Lambda> const& fn) -> decltype(auto)
+        {
+            return fn();
+        }
+
         // The current arguments
         template <typename... Nameds>
         class storage : private Nameds...
@@ -213,6 +242,18 @@ namespace nickel {
                     construct_tag {},
                     static_cast<Nameds&&>(*this)...,
                     named<Name, T&&> {NICKEL_FWD(value)},
+                };
+            }
+
+            // NOT PUBLIC API
+            // Sets by value, not by reference
+            template <typename Name, typename T>
+            constexpr auto _set_value(set_tag, T&& value) &&
+            {
+                return storage<Nameds..., named<Name, T>> {
+                    construct_tag {},
+                    static_cast<Nameds&&>(*this)...,
+                    named<Name, T> {NICKEL_FWD(value)},
                 };
             }
 
@@ -256,7 +297,7 @@ namespace nickel {
                 if constexpr (is_set<Name>) {
                     return NICKEL_MOVE(*this).get(id);
                 } else {
-                    return NICKEL_FWD(defaults).get(id);
+                    return detail::get_default(NICKEL_FWD(defaults).get(id));
                 }
             }
 #else
@@ -264,7 +305,7 @@ namespace nickel {
             constexpr decltype(auto) get_or_default_(
                 std::false_type, tag_t<Name> id, Defaults&& defaults) &&
             {
-                return NICKEL_FWD(defaults).get(id);
+                return detail::get_default(NICKEL_FWD(defaults).get(id));
             }
 
             template <typename Name, typename Defaults>
@@ -481,8 +522,8 @@ namespace nickel {
         constexpr auto make_default_storage(
             Storage&& storage, defaulted<Name, Value> defaulted_arg, DefaultedNames&&... names)
         {
-            return make_default_storage(
-                NICKEL_FWD(storage).template set<Name>(NICKEL_MOVE(defaulted_arg).value),
+            return make_default_storage(NICKEL_FWD(storage).template _set_value<Name>(
+                                            set_tag {}, NICKEL_MOVE(defaulted_arg).value),
                 NICKEL_FWD(names)...);
         }
 
@@ -523,6 +564,13 @@ namespace nickel {
     constexpr auto wrap(Names&&... names)
     {
         return nickel::name_group(NICKEL_FWD(names)...)(detail::name_group_to_partial_fn_tag {});
+    }
+
+    template <typename Lambda>
+    constexpr auto deferred(Lambda&& fn)
+    {
+        return detail::deferred<detail::remove_cvref_t<Lambda>>(
+            detail::construct_tag {}, NICKEL_FWD(fn));
     }
 
 // Generate a new name.
