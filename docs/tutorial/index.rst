@@ -12,3 +12,4 @@ Nickel is a header-only library. To begin using it, ``#include`` it:
     :caption: Contents:
 
     ordinary-usage
+    advanced

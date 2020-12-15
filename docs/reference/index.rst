@@ -257,3 +257,49 @@ It is recommended to use a tuple-like type for default arguments on multivalued 
 
     // Moves to (0, 0)
     move(point)();
+
+.. _using-nickel-to-steal-members:
+.. _nickel-steal:
+
+Using Nickel to Steal Members
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use ``nickel::steal(...)`` to make a function that allows members to be stolen:
+
+.. code:: c++
+
+    class MyCustomType {
+    private:
+        std::string name;
+        std::vector<int> ids;
+        std::unique_ptr<int> memory;
+
+    public:
+        auto steal() && {
+            return nickel::steal(
+                std::move(*this),
+                // Each name must be given a default argument of the pointer-to-member-data
+                name_name = &MyCustomType::name,
+                ids_name = &MyCustomType::ids,
+                memory_name = &MyCustomType::memory);
+        }
+    };
+
+Currently, member access is only supported for pointer-to-member-data.
+
+When users evaluate the ``steal()`` function, they will get a tuple of the requested members
+in the order that they request the members in:
+
+.. code:: c++
+
+    std::unique_ptr<int> memory;
+    std::vector<int> ids;
+    std::tie(memory, ids) = std::move(object).steal()
+        .memory()
+        .ids()();
+
+However, if they request only a single member, there will be no tuple:
+
+.. code:: c++
+
+    std::unique_ptr<int> memory = std::move(object).steal().memory()();
