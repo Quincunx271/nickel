@@ -49,8 +49,30 @@
             
   <div class="section" id="reference">
 <h1>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="standard-features">
+<h2>Standard Features<a class="headerlink" href="#standard-features" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="nickel-call">
+<span id="calling-a-nickel-wrapped-function"></span><span id="id1"></span><h3>Calling a Nickel-Wrapped Function<a class="headerlink" href="#nickel-call" title="Permalink to this headline">¶</a></h3>
+<p>Call a Nickel-wrapped function by initiating, setting arguments, then finishing the call:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span> <span class="n">result</span> <span class="o">=</span> <span class="n">wrapped_function</span><span class="p">(</span><span class="n">positional_arg</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">// initiate</span>
+    <span class="p">.</span><span class="n">param1</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>      <span class="c1">// set args</span>
+    <span class="p">.</span><span class="n">param2</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>    <span class="c1">// set args</span>
+    <span class="p">();</span>             <span class="c1">// finish the call</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Setting the arguments can be done in any order.
+You may also skip setting any arguments that have default arguments.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Do NOT store a partial result.
+Once you initiate a function call, make sure you finish the call in the same expression.</p>
+</div>
+</div>
 <div class="section" id="name-decl">
-<span id="declaring-names"></span><span id="id1"></span><h2>Declaring Names<a class="headerlink" href="#name-decl" title="Permalink to this headline">¶</a></h2>
+<span id="declaring-names"></span><span id="id2"></span><h3>Declaring Names<a class="headerlink" href="#name-decl" title="Permalink to this headline">¶</a></h3>
 <p>Using <code class="docutils literal notranslate"><span class="pre">NICKEL_NAME(...)</span></code> at namespace scope:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Declares a variable `variable_name` which provides a</span>
 <span class="c1">// .method_name(...) name.</span>
@@ -62,7 +84,7 @@
 </div>
 </div>
 <div class="section" id="fn-decl">
-<span id="declaring-nickel-wrapped-function"></span><span id="id2"></span><h2>Declaring Nickel-Wrapped Function<a class="headerlink" href="#fn-decl" title="Permalink to this headline">¶</a></h2>
+<span id="declaring-nickel-wrapped-function"></span><span id="id3"></span><h3>Declaring Nickel-Wrapped Function<a class="headerlink" href="#fn-decl" title="Permalink to this headline">¶</a></h3>
 <p>Make a function wrapping a call to <code class="docutils literal notranslate"><span class="pre">nickel::wrap(...)</span></code>:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">my_function</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(...)([](...)</span> <span class="p">{</span> <span class="p">...</span> <span class="p">});</span>
@@ -71,7 +93,7 @@
 </div>
 </div>
 <div class="section" id="named-param-decl">
-<span id="declaring-named-parameters"></span><span id="id3"></span><h2>Declaring Named Parameters<a class="headerlink" href="#named-param-decl" title="Permalink to this headline">¶</a></h2>
+<span id="declaring-named-parameters"></span><span id="id4"></span><h3>Declaring Named Parameters<a class="headerlink" href="#named-param-decl" title="Permalink to this headline">¶</a></h3>
 <p>Pass names to <code class="docutils literal notranslate"><span class="pre">nickel::wrap(...)</span></code>:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">my_function</span><span class="p">()</span> <span class="p">{</span>
     <span class="c1">// x_name and y previously declared as:</span>
@@ -88,7 +110,7 @@
 </div>
 </div>
 <div class="section" id="pos-param-decl">
-<span id="declaring-positional-parameters"></span><span id="id4"></span><h2>Declaring Positional Parameters<a class="headerlink" href="#pos-param-decl" title="Permalink to this headline">¶</a></h2>
+<span id="declaring-positional-parameters"></span><span id="id5"></span><h3>Declaring Positional Parameters<a class="headerlink" href="#pos-param-decl" title="Permalink to this headline">¶</a></h3>
 <p>Add parameters to the wrapper function and capture them in the lambda:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">my_function</span><span class="p">(</span><span class="kt">int</span> <span class="n">positional1</span><span class="p">,</span> <span class="kt">int</span> <span class="k">const</span><span class="o">&amp;</span> <span class="n">ref</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">x_name</span><span class="p">,</span> <span class="n">y</span><span class="p">)(</span>
@@ -106,7 +128,7 @@
 </div>
 </div>
 <div class="section" id="default-args">
-<span id="adding-default-arguments"></span><span id="id5"></span><h2>Adding Default Arguments<a class="headerlink" href="#default-args" title="Permalink to this headline">¶</a></h2>
+<span id="adding-default-arguments"></span><span id="id6"></span><h3>Adding Default Arguments<a class="headerlink" href="#default-args" title="Permalink to this headline">¶</a></h3>
 <p>Add default arguments with <cite>name_variable = default_arg</cite>:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">logarithm</span><span class="p">(</span><span class="kt">double</span> <span class="n">arg</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">base</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">)([</span><span class="n">arg</span><span class="p">](</span><span class="kt">double</span> <span class="n">base</span><span class="p">)</span> <span class="p">{</span>
@@ -117,7 +139,7 @@
 </div>
 </div>
 <div class="section" id="deferred-default-arguments">
-<h2>Deferred Default Arguments<a class="headerlink" href="#deferred-default-arguments" title="Permalink to this headline">¶</a></h2>
+<h3>Deferred Default Arguments<a class="headerlink" href="#deferred-default-arguments" title="Permalink to this headline">¶</a></h3>
 <dl class="simple">
 <dt>Default arguments can have their evaluation deferred with</dt><dd><p><code class="docutils literal notranslate"><span class="pre">name_variable</span> <span class="pre">=</span> <span class="pre">nickel::deferred([]</span> <span class="pre">{</span> <span class="pre">return</span> <span class="pre">value;</span> <span class="pre">})</span></code>.</p>
 </dd>
@@ -146,28 +168,11 @@
 </pre></div>
 </div>
 </div>
-<div class="section" id="nickel-call">
-<span id="calling-a-nickel-wrapped-function"></span><span id="id6"></span><h2>Calling a Nickel-Wrapped Function<a class="headerlink" href="#nickel-call" title="Permalink to this headline">¶</a></h2>
-<p>Call a Nickel-wrapped function by initiating, setting arguments, then finishing the call:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span> <span class="n">result</span> <span class="o">=</span> <span class="n">wrapped_function</span><span class="p">(</span><span class="n">positional_arg</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">// initiate</span>
-    <span class="p">.</span><span class="n">param1</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>      <span class="c1">// set args</span>
-    <span class="p">.</span><span class="n">param2</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>    <span class="c1">// set args</span>
-    <span class="p">();</span>             <span class="c1">// finish the call</span>
-</pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Setting the arguments can be done in any order.
-You may also skip setting any arguments that have default arguments.</p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Do NOT store a partial result.
-Once you initiate a function call, make sure you finish the call in the same expression.</p>
-</div>
-</div>
+<div class="section" id="advanced-features">
+<h2>Advanced Features<a class="headerlink" href="#advanced-features" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="name-group">
-<span id="declaring-a-name-group"></span><span id="id7"></span><h2>Declaring a Name Group<a class="headerlink" href="#name-group" title="Permalink to this headline">¶</a></h2>
+<span id="declaring-a-name-group"></span><span id="id7"></span><h3>Declaring a Name Group<a class="headerlink" href="#name-group" title="Permalink to this headline">¶</a></h3>
 <p>Collect a group of names together by calling <code class="docutils literal notranslate"><span class="pre">nickel::name_group(x,</span> <span class="pre">y)</span></code>.
 These can be used in place of a name variable when calling <code class="docutils literal notranslate"><span class="pre">nickel::wrap(...)</span></code>,
 which acts like each name bound separately.
@@ -184,7 +189,7 @@ Default arguments may also be specified via the name group:</p>
 </div>
 </div>
 <div class="section" id="kwargs">
-<span id="using-kwargs"></span><span id="id8"></span><h2>Using Kwargs<a class="headerlink" href="#kwargs" title="Permalink to this headline">¶</a></h2>
+<span id="using-kwargs"></span><span id="id8"></span><h3>Using Kwargs<a class="headerlink" href="#kwargs" title="Permalink to this headline">¶</a></h3>
 <p>Mark a group of names as kwargs by calling <code class="docutils literal notranslate"><span class="pre">nickel::kwargs_group(name_group,</span> <span class="pre">other_name)</span></code>.
 The <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> argument will be passed as the first argument of the function passed to <code class="docutils literal notranslate"><span class="pre">nickel::wrap(...)(...)</span></code>.
 Passed parameters can be accessed via <code class="docutils literal notranslate"><span class="pre">kwargs.get(name_variable)</span></code> or via <code class="docutils literal notranslate"><span class="pre">kwargs.name()</span></code>.
@@ -205,6 +210,48 @@ into the initiated function with <code class="docutils literal notranslate"><spa
 </div>
 </div>
 </div>
+<div class="section" id="experimental-features">
+<h2>Experimental Features<a class="headerlink" href="#experimental-features" title="Permalink to this headline">¶</a></h2>
+<p>Use these features at your own risk. They may disappear in future versions of Nickel.</p>
+<div class="section" id="multivalued-param-decl">
+<span id="declaring-multivalued-parameters"></span><span id="id9"></span><h3>Declaring Multivalued Parameters<a class="headerlink" href="#multivalued-param-decl" title="Permalink to this headline">¶</a></h3>
+<p>Declare that a name should be called with multiple arguments by calling <code class="docutils literal notranslate"><span class="pre">name.multivalued&lt;N&gt;()</span></code> when passing it to <code class="docutils literal notranslate"><span class="pre">nickel::wrap(...)</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">N</span></code> that you pass specifies the number of parameters used.
+Multivalued parameters will have their argument in the lambda passed as a <code class="docutils literal notranslate"><span class="pre">std::tuple&lt;...&gt;</span></code> of references.
+Passing <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">1</span></code> will result in a <code class="docutils literal notranslate"><span class="pre">std::tuple&lt;...&gt;</span></code> instead of <code class="docutils literal notranslate"><span class="pre">...</span></code>.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">move</span><span class="p">(</span><span class="n">Point</span><span class="o">&amp;</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">to</span><span class="p">.</span><span class="n">multivalued</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">())([</span><span class="o">&amp;</span><span class="n">p</span><span class="p">](</span><span class="k">auto</span> <span class="n">to</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">p</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">to</span><span class="p">);</span>
+        <span class="n">p</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">to</span><span class="p">);</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+
+<span class="n">move</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+    <span class="p">();</span>
+</pre></div>
+</div>
+<p>Multivalued parameters may have a default argument applied like other named parameters.
+In this case, the lambda argument will be passed the default value without any <code class="docutils literal notranslate"><span class="pre">std::tuple&lt;...&gt;</span></code> conversions.
+It is recommended to use a tuple-like type for default arguments on multivalued parameters to avoid special casing.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">move</span><span class="p">(</span><span class="n">Point</span><span class="o">&amp;</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">to</span><span class="p">.</span><span class="n">multivalued</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">()</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">make_pair</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))([</span><span class="o">&amp;</span><span class="n">p</span><span class="p">](</span><span class="k">auto</span> <span class="n">to</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">p</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">(</span><span class="n">to</span><span class="p">);</span>
+        <span class="n">p</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">get</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">to</span><span class="p">);</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+
+<span class="c1">// Moves to (0, 0)</span>
+<span class="n">move</span><span class="p">(</span><span class="n">point</span><span class="p">)();</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 
 
             <div class="clearer"></div>
@@ -216,15 +263,25 @@ into the initiated function with <code class="docutils literal notranslate"><spa
   <h3><a href="../index.html">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Reference</a><ul>
+<li><a class="reference internal" href="#standard-features">Standard Features</a><ul>
+<li><a class="reference internal" href="#nickel-call">Calling a Nickel-Wrapped Function</a></li>
 <li><a class="reference internal" href="#name-decl">Declaring Names</a></li>
 <li><a class="reference internal" href="#fn-decl">Declaring Nickel-Wrapped Function</a></li>
 <li><a class="reference internal" href="#named-param-decl">Declaring Named Parameters</a></li>
 <li><a class="reference internal" href="#pos-param-decl">Declaring Positional Parameters</a></li>
 <li><a class="reference internal" href="#default-args">Adding Default Arguments</a></li>
 <li><a class="reference internal" href="#deferred-default-arguments">Deferred Default Arguments</a></li>
-<li><a class="reference internal" href="#nickel-call">Calling a Nickel-Wrapped Function</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#advanced-features">Advanced Features</a><ul>
 <li><a class="reference internal" href="#name-group">Declaring a Name Group</a></li>
 <li><a class="reference internal" href="#kwargs">Using Kwargs</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#experimental-features">Experimental Features</a><ul>
+<li><a class="reference internal" href="#multivalued-param-decl">Declaring Multivalued Parameters</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
