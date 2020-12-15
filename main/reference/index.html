@@ -116,6 +116,36 @@
 </pre></div>
 </div>
 </div>
+<div class="section" id="deferred-default-arguments">
+<h2>Deferred Default Arguments<a class="headerlink" href="#deferred-default-arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="simple">
+<dt>Default arguments can have their evaluation deferred with</dt><dd><p><code class="docutils literal notranslate"><span class="pre">name_variable</span> <span class="pre">=</span> <span class="pre">nickel::deferred([]</span> <span class="pre">{</span> <span class="pre">return</span> <span class="pre">value;</span> <span class="pre">})</span></code>.</p>
+</dd>
+<dt>This will prevent evaluation if the user provides a value for the argument</dt><dd><p>instead of relying on the default value:</p>
+</dd>
+</dl>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">using</span> <span class="k">namespace</span> <span class="n">std</span><span class="o">::</span><span class="n">string_literals</span><span class="p">;</span>
+
+<span class="k">constexpr</span> <span class="k">auto</span> <span class="n">say_hello</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">nickel</span><span class="o">::</span><span class="n">deferred</span><span class="p">([]</span> <span class="p">{</span> <span class="k">return</span> <span class="s">&quot;Some long string which doesn&#39;t fit in the SSO&quot;</span><span class="n">s</span><span class="p">;</span> <span class="p">}))</span>
+        <span class="p">([</span><span class="n">arg</span><span class="p">](</span><span class="k">auto</span> <span class="k">const</span><span class="o">&amp;</span> <span class="n">prefix</span><span class="p">)</span> <span class="p">{</span>
+            <span class="p">...</span>
+        <span class="p">});</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+
+<span class="c1">// Does not pay the cost of constructing the long string</span>
+<span class="n">say_hello</span><span class="p">()</span>
+    <span class="p">.</span><span class="n">prefix</span><span class="p">(</span><span class="s">&quot;Hello&quot;</span><span class="p">)</span>
+    <span class="p">();</span>
+
+<span class="c1">// Still defaults to the default argument</span>
+<span class="n">say_hello</span><span class="p">()();</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="nickel-call">
 <span id="calling-a-nickel-wrapped-function"></span><span id="id6"></span><h2>Calling a Nickel-Wrapped Function<a class="headerlink" href="#nickel-call" title="Permalink to this headline">¶</a></h2>
 <p>Call a Nickel-wrapped function by initiating, setting arguments, then finishing the call:</p>
@@ -191,6 +221,7 @@ into the initiated function with <code class="docutils literal notranslate"><spa
 <li><a class="reference internal" href="#named-param-decl">Declaring Named Parameters</a></li>
 <li><a class="reference internal" href="#pos-param-decl">Declaring Positional Parameters</a></li>
 <li><a class="reference internal" href="#default-args">Adding Default Arguments</a></li>
+<li><a class="reference internal" href="#deferred-default-arguments">Deferred Default Arguments</a></li>
 <li><a class="reference internal" href="#nickel-call">Calling a Nickel-Wrapped Function</a></li>
 <li><a class="reference internal" href="#name-group">Declaring a Name Group</a></li>
 <li><a class="reference internal" href="#kwargs">Using Kwargs</a></li>
