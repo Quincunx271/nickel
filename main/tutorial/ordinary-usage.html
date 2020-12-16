@@ -74,6 +74,12 @@ we have to declare what names we want before we use them.</p>
 <span class="n">NICKEL_NAME</span><span class="p">(</span><span class="n">base_name</span><span class="p">,</span> <span class="n">base</span><span class="p">);</span>
 </pre></div>
 </div>
+<p>If you want the variable to have the same name as the name, you can omit the second parameter:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Declares a variable with the name `base`</span>
+<span class="c1">// which declares a named parameter with name `base`</span>
+<span class="n">NICKEL_NAME</span><span class="p">(</span><span class="n">base</span><span class="p">);</span>
+</pre></div>
+</div>
 <p>To declare a function with named parameters using Nickel,
 we have to wrap a regular function with named information:</p>
 <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">constexpr</span> <span class="k">auto</span> <span class="n">logarithm</span><span class="p">(</span><span class="kt">double</span> <span class="n">operand</span><span class="p">)</span> <span class="p">{</span>
