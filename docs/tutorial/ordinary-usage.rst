@@ -33,6 +33,14 @@ we have to declare what names we want before we use them.
     // which declares a named parameter with name `base`
     NICKEL_NAME(base_name, base);
 
+If you want the variable to have the same name as the name, you can omit the second parameter:
+
+.. code:: c++
+
+    // Declares a variable with the name `base`
+    // which declares a named parameter with name `base`
+    NICKEL_NAME(base);
+
 
 To declare a function with named parameters using Nickel,
 we have to wrap a regular function with named information:

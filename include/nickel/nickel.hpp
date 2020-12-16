@@ -665,10 +665,7 @@ namespace nickel {
             ._make_steal_wrapped_fn(detail::priv_tag {}, std::addressof(object));
     }
 
-// Generate a new name.
-// NICKEL_NAME(variable, name) generates a `variable` which has a `.name()`
-// named function
-#define NICKEL_NAME(variable, name)                                                                \
+#define NICKEL_DETAIL_NAME2(variable, name)                                                        \
     template <int N = -1>                                                                          \
     struct variable##_nickel_name_type                                                             \
     {                                                                                              \
@@ -731,6 +728,16 @@ namespace nickel {
                                                                                                    \
     constexpr auto variable = variable##_nickel_name_type<>                                        \
     { }
+
+#define NICKEL_DETAIL_NAME1(name) NICKEL_DETAIL_NAME2(name, name)
+
+// Force evaluation of the preprocessor, even previous tokens of `MACRO ( macro args )`
+#define NICKEL_DETAIL_EXPAND(...) __VA_ARGS__
+
+#define NICKEL_DETAIL_NAME_OVERLOAD(_1, _2, Overload, ...) Overload
+#define NICKEL_NAME(...)                                                                           \
+    NICKEL_DETAIL_EXPAND(NICKEL_DETAIL_NAME_OVERLOAD(                                              \
+        __VA_ARGS__, NICKEL_DETAIL_NAME2, NICKEL_DETAIL_NAME1, )(__VA_ARGS__))
 }
 
 #undef NICKEL_FWD

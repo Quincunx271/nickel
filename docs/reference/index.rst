@@ -48,6 +48,9 @@ Using ``NICKEL_NAME(...)`` at namespace scope:
     // The variable can have the same name as the method.
     NICKEL_NAME(name, name);
 
+    // Shorthand for reusing the same name:
+    NICKEL_NAME(name);
+
 .. _declaring-nickel-wrapped-function:
 .. _fn-decl:
 
