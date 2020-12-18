@@ -3,7 +3,8 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#pragma once
+#ifndef NICKEL_H_5C149283
+#define NICKEL_H_5C149283
 
 #include <memory> // std::addressof
 #include <tuple>
@@ -19,9 +20,11 @@
 #ifdef __cpp_lib_type_trait_variable_templates
 #define NICKEL_IS_VOID(...) std::is_void_v<__VA_ARGS__>
 #define NICKEL_IS_SAME(...) std::is_same_v<__VA_ARGS__>
+#define NICKEL_IS_RVALUE_REFERENCE(...) std::is_rvalue_reference_v<__VA_ARGS__>
 #else
 #define NICKEL_IS_VOID(...) std::is_void<__VA_ARGS__>::value
 #define NICKEL_IS_SAME(...) std::is_same<__VA_ARGS__>::value
+#define NICKEL_IS_RVALUE_REFERENCE(...) std::is_rvalue_reference<__VA_ARGS__>::value
 #endif
 
 namespace nickel {
@@ -656,6 +659,9 @@ namespace nickel {
     template <typename Class, typename... Names, typename... PtrToMemData>
     constexpr auto steal(Class&& object, detail::defaulted<Names, PtrToMemData>... names)
     {
+        static_assert(NICKEL_IS_RVALUE_REFERENCE(Class &&),
+            "Object must be an rvalue. Pass std::move(*this) to nickel::steal(...)");
+
         using check_group_t = decltype(nickel::name_group(NICKEL_MOVE(names)...));
 
         static_assert(!check_group_t::_has_kwargs(detail::priv_tag {}),
@@ -676,7 +682,7 @@ namespace nickel {
             template <typename... Ts>                                                              \
             constexpr auto name(Ts&&... values) &&                                                 \
             {                                                                                      \
-                static_assert(sizeof...(Ts) == N || sizeof...(Ts) == 1 && N == -1,                 \
+                static_assert(sizeof...(Ts) == N || (sizeof...(Ts) == 1 && N == -1),               \
                     "Must call the function with the specified arguments: " #name);                \
                 return static_cast<Derived&&>(*this)(::nickel::detail::set_tag {},                 \
                     variable##_nickel_name_type {}, ::nickel::detail::int_t<N> {},                 \
@@ -744,3 +750,6 @@ namespace nickel {
 #undef NICKEL_MOVE
 #undef NICKEL_IS_VOID
 #undef NICKEL_IS_SAME
+#undef NICKEL_IS_RVALUE_REFERENCE
+
+#endif
