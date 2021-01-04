@@ -7,7 +7,7 @@ author = 'Justin Bassett'
 
 # -- General configuration ---------------------------------------------------
 extensions = []
-templates_path = []
+templates_path = ['_templates']
 exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------

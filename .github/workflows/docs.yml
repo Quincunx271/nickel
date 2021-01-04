@@ -17,25 +17,33 @@ jobs:
         build_type: [Debug]
 
     steps:
-    - name: Install Sphinx
+    - name: Install Sphinx & Dependencies
       run: |
         pip3 install --user sphinx
         source ~/.profile
         sphinx-build --version
         which sphinx-build
+        pip3 install --user semver
 
     - uses: actions/checkout@v2
       with:
-        fetch-depth: 0
+        path: master
+
+    - uses: actions/checkout@v2
+      with:
+        ref: gh-pages
+        path: gh-pages
 
     - name: Get Git Info
       id: gitinfo
+      working-directory: master
       run: |
         echo "::set-output name=COMMIT_HASH::$(git rev-parse --short HEAD)"
 
     - name: Configure Docs
       id: config
       shell: python
+      working-directory: master
       run: |
         import os
 
@@ -49,36 +57,39 @@ jobs:
           print('::set-output name=COMMIT_MSG::Update docs for commit ' + '${{ steps.gitinfo.outputs.COMMIT_HASH }}')
 
     - name: Configure CMake
+      working-directory: master
       run: |
         source ~/.profile
-        cmake -S. -B${{ runner.workspace }}/build          \
+        cmake -S. -Bbuild                                  \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}      \
           -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}           \
           -DCMAKE_CXX_STANDARD=${{ matrix.std }}           \
           -DNICKEL_WARNINGS_AS_ERRORS=ON                   \
           -DBUILD_TESTING=OFF                              \
           -DNICKEL_BUILD_DOCS=ON                           \
-          "-DCMAKE_INSTALL_PREFIX=${{ runner.workspace }}/build/install"
+          "-DCMAKE_INSTALL_PREFIX=$PWD/build/install"
 
     - name: Build Docs
-      working-directory: ${{ runner.workspace }}/build
-      run: cmake --build . --config ${{ matrix.build_type }} --target docs
+      working-directory: master
+      run: cmake --build build --config ${{ matrix.build_type }} --target docs
 
     - name: Install
-      working-directory: ${{ runner.workspace }}/build
-      run: cmake --build . --config ${{ matrix.build_type }} -j2 --target install
+      working-directory: master
+      run: cmake --build build --config ${{ matrix.build_type }} -j2 --target install
 
     - name: Publish docs
+      working-directory: gh-pages
       run: |
-        git checkout gh-pages
         # Git requires user email and name to do commits.
         # Set user email to the email of the last commit, as that's about the best we can do
         git config --local user.email "$(git log -n 1 --pretty=format:'%ae')"
         git config --local user.name 'GitHub Actions'
 
         rm -r '${{ steps.config.outputs.DOCS_DIR }}'
-        cp -r '${{ runner.workspace }}/build/install/share/doc/nickel/html' '${{ steps.config.outputs.DOCS_DIR }}'
-        
+        cp -r '${{ github.workspace }}/master/build/install/share/doc/nickel/html' '${{ steps.config.outputs.DOCS_DIR }}'
+
+        python3 '${{ github.workspace }}/master/.ci/update-version-selector-js.py' '${{ github.workspace }}/master/docs/version-selector.js'
+
         if [[ `git status --porcelain` ]]; then
           echo "Changes found"
           git add -A

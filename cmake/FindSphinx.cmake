@@ -43,7 +43,7 @@ endif()
 set(_find_sphinx_executed_before TRUE)
 
 function(add_sphinx_target NAME)
-  cmake_parse_arguments(PARSE_ARGV 1 ARG "ALL" "CONF;BUILDER" "SETTINGS")
+  cmake_parse_arguments(PARSE_ARGV 1 ARG "ALL" "CONF;BUILDER" "SETTINGS;HTML_TEMPLATE_VALUES")
 
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "Unknown arguments ${ARG_UNPARSED_ARGUMENTS}")
@@ -66,6 +66,10 @@ function(add_sphinx_target NAME)
 
   foreach(setting IN LISTS ARG_SETTINGS)
     list(APPEND cmd_args -D ${setting})
+  endforeach()
+
+  foreach(setting IN LISTS ARG_HTML_TEMPLATE_VALUES)
+    list(APPEND cmd_args -A ${setting})
   endforeach()
 
   list(APPEND cmd_args

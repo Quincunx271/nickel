@@ -1,0 +1,13 @@
+{% extends "!layout.html" %}
+{% block extrahead %}
+  {{ super() }}
+  <script src="{{ pathto('../version-selector.js', 1) }}"></script>
+{% endblock %}
+{% block rootrellink %}
+  {{ super() }}
+  <span id='version-selector-container'></span>
+  <script>
+    $('body').data('documentation-root', "{{ pathto('..', 1) }}")
+    $('body').data('documentation-current-page', "{{ pagename + file_suffix }}")
+  </script>
+{% endblock %}
