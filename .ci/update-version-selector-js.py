@@ -7,23 +7,23 @@ import semver
 
 # Run from root of gh-pages branch
 cwd = pathlib.Path.cwd()
-versions = [x.name for x in cwd.iterdir() if x.is_dir()]
+published_versions = [x.name for x in cwd.iterdir() if x.is_dir()]
 
 # We explicitly want this at the front of the list, so remove for now
-versions.remove('main')
-versions.remove('.git')
-versions = sorted(
-    versions,
+published_versions.remove('main')
+published_versions.remove('.git')
+published_versions = sorted(
+    published_versions,
     key=functools.cmp_to_key(semver.compare),
     reverse=True
 )
 
-versions = [[version, version] for version in versions]
+published_versions = [[version, version] for version in published_versions]
 versions = [
     ['main', 'git-main'],
-    *([versions[0][0], 'latest'] if versions else []),
-    *versions,
 ]
+if published_versions: versions.append([published_versions[0][0], 'latest'])
+versions += published_versions
 
 with open(sys.argv[1], 'r') as f:
     version_selector_template = f.read()
