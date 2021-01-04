@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Redirecting to Latest</title>
+
+<body>
+  <script>
+    window.location.href = window.location.href.substring(0,
+      window.location.href.lastIndexOf('/')) + '/{{latest_version}}/index.html'
+  </script>
+</body>

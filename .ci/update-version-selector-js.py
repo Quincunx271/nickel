@@ -10,8 +10,8 @@ cwd = pathlib.Path.cwd()
 published_versions = [x.name for x in cwd.iterdir() if x.is_dir()]
 
 # We explicitly want this at the front of the list, so remove for now
-published_versions.remove('main')
-published_versions.remove('.git')
+if 'main' in published_versions: published_versions.remove('main')
+if '.git' in published_versions: published_versions.remove('.git')
 published_versions = sorted(
     published_versions,
     key=functools.cmp_to_key(semver.compare),
@@ -33,3 +33,11 @@ with open(sys.argv[1], 'r') as f:
 
     with open('version-selector.js', 'w') as f:
         f.write(version_selector_template)
+
+# We also want to update the root index.html file to redirect to the new version
+with open(sys.argv[2], 'r') as f:
+    index_html_template = f.read()
+    index_html_template = index_html_template.replace('{{latest_version}}', published_versions[0][0])
+
+    with open('index.html', 'w') as f:
+        f.write(index_html_template)
