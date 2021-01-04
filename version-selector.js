@@ -2,7 +2,7 @@
     'use strict';
 
     // Replaced by a script
-    const versions = [['main', 'git-main'], '.git', 'latest', ['.git', '.git']]
+    const versions = [['main', 'git-main']]
 
     function createSelector() {
         var generated = ['<select id="version-selector">']
