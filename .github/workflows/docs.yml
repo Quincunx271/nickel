@@ -85,7 +85,7 @@ jobs:
         git config --local user.email "$(git log -n 1 --pretty=format:'%ae')"
         git config --local user.name 'GitHub Actions'
 
-        rm -r '${{ steps.config.outputs.DOCS_DIR }}'
+        rm -rf '${{ steps.config.outputs.DOCS_DIR }}'
         cp -r '${{ github.workspace }}/master/build/install/share/doc/nickel/html' '${{ steps.config.outputs.DOCS_DIR }}'
 
         python3 '${{ github.workspace }}/master/.ci/update-version-selector-js.py' '${{ github.workspace }}/master/docs/version-selector.js'
