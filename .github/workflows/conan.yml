@@ -34,7 +34,7 @@ jobs:
           print('::set-output name=CONAN_CHANNEL::stable')
         else:
           assert '${{ github.event_name }}' == 'push'
-          print('::set-output name=CONAN_VERSION::latest')
+          print('::set-output name=CONAN_VERSION::git-head')
           print('::set-output name=CONAN_CHANNEL::testing')
 
     - name: Install Conan Package
