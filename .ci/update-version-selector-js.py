@@ -11,6 +11,7 @@ versions = [x.name for x in cwd.iterdir() if x.is_dir()]
 
 # We explicitly want this at the front of the list, so remove for now
 versions.remove('main')
+versions.remove('.git')
 versions = sorted(
     versions,
     key=functools.cmp_to_key(semver.compare),
