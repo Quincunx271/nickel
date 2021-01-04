@@ -49,6 +49,8 @@ jobs:
 
         if '${{ github.event_name }}' == 'release':
           release = os.environ['GITHUB_REF'].split('/')[-1]
+          if release.startswith('v'):
+            release = release[1:]
           print('::set-output name=DOCS_DIR::' + release)
           print('::set-output name=COMMIT_MSG::Publish docs for release ' + release)
         else:

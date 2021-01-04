@@ -27,7 +27,10 @@ jobs:
         import os
 
         if '${{ github.event_name }}' == 'release':
-          print('::set-output name=CONAN_VERSION::' + os.environ['GITHUB_REF'].split('/')[-1])
+          release = os.environ['GITHUB_REF'].split('/')[-1]
+          if release.startswith('v'):
+            release = release[1:]
+          print('::set-output name=CONAN_VERSION::' + release)
           print('::set-output name=CONAN_CHANNEL::stable')
         else:
           assert '${{ github.event_name }}' == 'push'
