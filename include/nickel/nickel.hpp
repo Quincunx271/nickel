@@ -6,17 +6,26 @@
 #ifndef NICKEL_H_5C149283
 #define NICKEL_H_5C149283
 
+// If you are looking for documentation on how to use Nickel, prefer the out-of-code documentation.
+// The documentation in this header file is primarily on the internal details of working _on_ Nickel
+// rather than working _with_ nickel. Even so, after the close of the `detail` namespace, you can
+// find documentation on using Nickel.
+
 #include <memory> // std::addressof
 #include <tuple>
 #include <type_traits>
 
+// std::forward
 #define NICKEL_DETAIL_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
+// std::move
 #define NICKEL_DETAIL_MOVE(...)                                                                    \
     static_cast<::std::remove_reference_t<decltype(__VA_ARGS__)>&&>(__VA_ARGS__)
 
+// Shortcuts which only exist inside this header; they are #undef'd at the end.
 #define NICKEL_FWD NICKEL_DETAIL_FWD
 #define NICKEL_MOVE NICKEL_DETAIL_MOVE
 
+// Wraps std::trait_v<...> to work pre-C++17.
 #ifdef __cpp_lib_type_trait_variable_templates
 #define NICKEL_IS_VOID(...) std::is_void_v<__VA_ARGS__>
 #define NICKEL_IS_SAME(...) std::is_same_v<__VA_ARGS__>
@@ -28,7 +37,11 @@
 #endif
 
 namespace nickel {
+    // Internal implementation details of Nickel.
     namespace detail {
+        // Implement an equivalent of std::conditional_t which is more efficient,
+        // because there's only ever two instantiations of the type as compared to an instantiation
+        // for every combination of `bool`, Type1, Type2.
         template <bool B>
         struct conditional
         {
@@ -46,6 +59,7 @@ namespace nickel {
         template <bool Cond, typename A, typename B>
         using conditional_t = typename conditional<Cond>::template eval<A, B>;
 
+        // std::remove_cvref_t polyfill
 #ifdef __cpp_lib_remove_cvref
         template <typename T>
         using remove_cvref_t = std::remove_cvref_t<T>;
@@ -54,22 +68,21 @@ namespace nickel {
         using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
 #endif
 
-        template <typename T, typename...>
-        struct tag_t : tag_t<T>
-        { };
-
+        // Allows tag dispatch on a type `T`
         template <typename T>
-        struct tag_t<T>
+        struct tag_t
         {
             using type = T;
         };
 
+        // Allows tag dispatch on an int. std::integral_constant, but nicer.
         template <int N>
         struct int_t
         {
             static constexpr int value = N;
         };
 
+        // Used to implement mp_map_find, simply inherits from all the types.
         template <typename... Ts>
         struct inherit : Ts...
         { };
@@ -93,8 +106,12 @@ namespace nickel {
             using type = typename V::type;
         };
 
+        // A function taking a priv_tag is effectively private.
+        // We use this because several Nickel types can have arbitrary member functions (from the
+        // user-specified names), so we need an unambiguous way to refer to _our_ functions.
         struct priv_tag
         {
+            // Constructor marked explicit to prevent empty brace initialization.
             explicit constexpr priv_tag()
             { }
         };
@@ -103,9 +120,11 @@ namespace nickel {
         template <typename Name, typename T>
         struct named
         {
+            // The bound value. May be a reference (in fact, often is a reference).
             T value;
         };
 
+        // A metaprogramming list of names.
         template <typename... Names>
         struct names_t
         {
@@ -120,6 +139,7 @@ namespace nickel {
             template <typename Rhs>
             using append_names = typename Rhs::template apply<append>;
 
+            // TODO: figure out what this is and where it belongs.
             template <typename Fn, typename Storage, typename Defaults, typename... Extra>
             static constexpr auto map_reduce(Fn&& reduce, Storage&& storage, Defaults&& defaults,
                 Extra&&... extra) -> decltype(reduce(NICKEL_FWD(extra)...,
@@ -130,18 +150,26 @@ namespace nickel {
             }
         };
 
+        // Finds the named<X, Y> in `Nameds` corresponding to `Name`
         template <typename Name, typename... Nameds>
         using find_named = typename mp_map_find_impl<Name, Nameds...>::type;
 
+        // Marks a constructor.
+        // This eliminates the need to use SFINAE to prevent a constructor from subsuming the
+        // copy/move constructors.
         struct construct_tag
         { };
 
+        // Marks a "set" action as requested by a name.
         struct set_tag
         { };
 
+        // Marks a "get" action as requested by a name.
         struct get_tag
         { };
 
+        // The "kwargs" variable which gets passed to the user's function definition.
+        // Holds arguments which are desired to be passed on to further named-parameter functions.
         template <typename Storage>
         class kwargs : private Storage
         {
@@ -176,6 +204,8 @@ namespace nickel {
             }
 
             // NOT PUBLIC API
+            // TODO: Find a way to _not_ expose this.
+            // Create a `storage<...>` with our bound names AND rhs's bound names.
             template <typename OtherStorage>
             constexpr auto combine(OtherStorage&& rhs) &&
             {
@@ -183,6 +213,8 @@ namespace nickel {
             }
 
             // The following are NOT PUBLIC API:
+            // TODO: Find a way to _not_ expose this.
+            // TODO: figure out why this is desired, and why it isn't public API.
             template <typename Name>
             constexpr decltype(auto) operator()(get_tag, Name) &
             {
@@ -208,6 +240,7 @@ namespace nickel {
             }
         };
 
+        // An unevaluated default argument value
         template <typename Lambda>
         struct deferred : Lambda
         {
@@ -219,12 +252,15 @@ namespace nickel {
             using Lambda::operator();
         };
 
+        // Extracts the value in a default argument.
+        // These functions exist to enable first-class support for the deferred<...> type.
         template <typename T>
         constexpr auto get_default(T&& value) -> T&&
         {
             return NICKEL_FWD(value);
         }
 
+        // Deferred default arguments get called here.
         template <typename Lambda>
         constexpr auto get_default(deferred<Lambda>&& fn) -> decltype(auto)
         {
@@ -237,7 +273,7 @@ namespace nickel {
             return fn();
         }
 
-        // The current arguments
+        // The currently bound names; that is, the bound arguments.
         template <typename... Nameds>
         class storage : private Nameds...
         {
@@ -254,6 +290,7 @@ namespace nickel {
                 : Nameds {NICKEL_FWD(nameds)}...
             { }
 
+            // Binds `Name` to `value`.
             template <typename Name, typename T>
             constexpr auto set(T&& value) &&
             {
@@ -265,7 +302,7 @@ namespace nickel {
             }
 
             // NOT PUBLIC API
-            // Sets by value, not by reference
+            // Like `set()`, but forces a value instead of a reference.
             template <typename Name, typename T>
             constexpr auto _set_value(set_tag, T&& value) &&
             {
@@ -276,12 +313,14 @@ namespace nickel {
                 };
             }
 
+            // Retrieves the requested named<Name, T>
             template <typename Named>
             constexpr auto get_named() && -> Named&&
             {
                 return static_cast<Named&&>(*this);
             }
 
+            // Retrieves the named<Name, T> corresponding with Name.
             template <typename Name>
             constexpr decltype(auto) lookup_named(tag_t<Name>) &&
             {
@@ -291,6 +330,8 @@ namespace nickel {
                 return static_cast<Named&&>(*this);
             }
 
+            // Combines our bound arguments with `other`'s bound arguments, producing a `storage<>`
+            // with both.
             template <typename... OtherNameds>
             constexpr auto combine(storage<OtherNameds...>&& other) &&
             {
@@ -301,6 +342,7 @@ namespace nickel {
                 };
             }
 
+            // Retrieves the bound value associated with the Name.
             template <typename Name>
             constexpr decltype(auto) get(tag_t<Name> id) &&
             {
@@ -310,6 +352,8 @@ namespace nickel {
             }
 
 #ifdef __cpp_if_constexpr
+            // Retrieves the bound value associated with the Name, else falls back on retrieving
+            // from `defaults`.
             template <typename Name, typename Defaults>
             constexpr decltype(auto) get_or_default(tag_t<Name> id, Defaults&& defaults) &&
             {
@@ -333,6 +377,8 @@ namespace nickel {
                 return NICKEL_MOVE(*this).get(id);
             }
 
+            // Retrieves the bound value associated with the Name, else falls back on retrieving
+            // from `defaults`.
             template <typename Name, typename Defaults>
             constexpr decltype(auto) get_or_default(tag_t<Name> id, Defaults&& defaults) &&
             {
@@ -342,6 +388,8 @@ namespace nickel {
 #endif
 
             // NOT PUBLIC API
+            // TODO: figure out how to enforce non-public API.
+            // TODO: figure out precisely what this does.
             template <typename... Names, typename Defaults>
             constexpr decltype(auto) get(tag_t<names_t<Names...>>, Defaults&& defaults) &&
             {
@@ -361,17 +409,27 @@ namespace nickel {
         using allow_set_only_if_unset = conditional_t<Storage::template is_set<Name>, tag_t<Name>,
             typename Name::template set_type<CRTP>>;
 
+        // Unwraps the names_t<...> Kwargs and Names parameters of the wrapped_fn.
         template <typename Derived, typename Storage, typename Kwargs, typename Names>
         struct wrapped_fn_base;
 
         template <typename Derived, typename Storage, typename... Kwargs, typename... Names>
         struct wrapped_fn_base<Derived, Storage, names_t<Kwargs...>, names_t<Names...>>
-            : public allow_set_only_if_unset<Storage, Kwargs, Derived>...,
+            : // Provide .<name>() members for kwargs.
+              public allow_set_only_if_unset<Storage, Kwargs, Derived>...,
+              // Provide .<name>() members for named parameters.
               public allow_set_only_if_unset<Storage, Names, Derived>...
         { };
 
-        template <typename Defaults, typename Storage, typename Fn, typename Kwargs, typename Names,
-            typename CallEvalPolicy>
+        // wrapped_fn is the main workhorse of Nickel.
+
+        // The in-progress function call sequence.
+        template <typename Defaults, // The default arguments
+            typename Storage, // Any currently bound arguments
+            typename Fn, // The actual function we are wrapping (which we will call)
+            typename Kwargs, // Any Kwargs
+            typename Names, // The explicit named parameters
+            typename CallEvalPolicy> // How to implement calling `Fn`.
         class wrapped_fn : public wrapped_fn_base<
                                wrapped_fn<Defaults, Storage, Fn, Kwargs, Names, CallEvalPolicy>,
                                Storage, Kwargs, Names>
@@ -391,6 +449,7 @@ namespace nickel {
 
             // Bind the name to the multi-valued argument.
             // NOT PUBLIC API
+            // TODO: figure out how to enforce the NOT PUBLIC API
             template <typename Name, int N, typename... Ts>
             constexpr auto operator()(set_tag, Name, int_t<N>, Ts&&... values) &&
             {
@@ -407,6 +466,7 @@ namespace nickel {
 
             // Bind the name to the single argument.
             // NOT PUBLIC API
+            // TODO: figure out how to enforce the NOT PUBLIC API
             template <typename Name, typename T>
             constexpr auto operator()(set_tag, Name, int_t<-1>, T&& value) &&
             {
@@ -422,6 +482,7 @@ namespace nickel {
 
             // Bind the kwargs
             // NOT PUBLIC API
+            // TODO: figure out how to enforce the NOT PUBLIC API
             template <typename OtherStorage>
             constexpr auto operator()(kwargs<OtherStorage>&& kwargs) &&
             {
@@ -442,8 +503,10 @@ namespace nickel {
             }
         };
 
+        // The default policy: calls the function with the named arguments
         struct named_eval_policy
         {
+            // Calls the function, including kwargs parameters.
             template <typename Defaults, typename Storage, typename Kwargs, typename Names,
                 typename Fn>
             static constexpr decltype(auto) eval_impl(
@@ -453,6 +516,7 @@ namespace nickel {
                     NICKEL_FWD(storage).get(detail::tag_t<Kwargs> {}, NICKEL_FWD(defaults)));
             }
 
+            // Calls the function, in the absence of kwargs.
             template <typename Defaults, typename Storage, typename Kwargs, typename Names,
                 typename Fn>
             static constexpr decltype(auto) eval_impl(
@@ -462,8 +526,7 @@ namespace nickel {
                     NICKEL_MOVE(fn), NICKEL_MOVE(storage), NICKEL_MOVE(defaults));
             }
 
-            // Normally: Defaults, Storage, Kwargs, Names, Fn.
-            // We're re-using those for something else
+            // Evaluate the function call
             template <typename Defaults, typename Storage, typename Kwargs, typename Names,
                 typename Fn>
             static constexpr decltype(auto) eval(
@@ -474,8 +537,13 @@ namespace nickel {
             }
         };
 
+        // Re-uses the wrapped_fn workhorse to implement member stealing.
         struct steal_eval_policy
         {
+            // Defaults -> the members of the class we are stealing from
+            // Storage -> 0-arg values, storing the members requested and their order
+            // Fn -> The object which we are stealing from
+
             // Normally: Defaults, Storage, Kwargs, Names, Fn.
             // We're re-using those for something else
             template <typename Members, typename Names_, typename Class, typename... Names>
@@ -497,6 +565,8 @@ namespace nickel {
             }
         };
 
+        // A partial function definition where the names have been specified, but not the function.
+        // i.e. nickel::wrap(name1, name2), but without the second parentheses.
         template <typename Defaults, typename Kwargs, typename Names>
         class partial_wrap : private Defaults
         {
@@ -506,6 +576,7 @@ namespace nickel {
                 : Defaults {NICKEL_FWD(defaults)}
             { }
 
+            // Add the actual function that we will call
             template <typename Fn>
             constexpr auto operator()(Fn&& fn) &&
             {
@@ -519,6 +590,7 @@ namespace nickel {
             }
         };
 
+        // A defaulted argument
         template <typename Name, typename Value>
         struct defaulted
         {
@@ -527,12 +599,17 @@ namespace nickel {
             Value value;
         };
 
+        // TODO: convert this to some more uniform way of having private methods.
         struct name_group_to_partial_fn_tag
         { };
 
+        // TODO: convert this to some more uniform way of having private methods
         struct mark_kwargs_tag
         { };
 
+        // Groups several names into one piece of functionality that can be passed like one name.
+        // Every path through `nickel::wrap(...)` or similar gets wrapped in a name_group to enable
+        // uniformity in name_group's abilities.
         template <typename Defaults, typename Kwargs, typename Names>
         class name_group : private Defaults
         {
@@ -542,6 +619,7 @@ namespace nickel {
                 : Defaults {NICKEL_FWD(defaults)}
             { }
 
+            // Produces a single name_group which has all of _our_ names and all of _group_'s names.
             template <typename OtherDefaults, typename OtherKwargs, typename OtherNames>
             constexpr auto combine(name_group<OtherDefaults, OtherKwargs, OtherNames>&& group) &&
             {
@@ -556,6 +634,7 @@ namespace nickel {
                 };
             }
 
+            // Initiates the partial_wrap sequence.
             constexpr auto operator()(name_group_to_partial_fn_tag) &&
             {
                 return detail::partial_wrap<Defaults, Kwargs, Names> {
@@ -564,6 +643,7 @@ namespace nickel {
                 };
             }
 
+            // Initiates the member stealing sequence.
             template <typename Class>
             constexpr auto _make_steal_wrapped_fn(priv_tag, Class* obj) &&
             {
@@ -575,6 +655,7 @@ namespace nickel {
                 };
             }
 
+            // Marks all of the names inside this name_group as kwargs instead of regular names.
             constexpr auto _mark_all_kwargs(mark_kwargs_tag) &&
             {
                 return name_group<Defaults, typename Kwargs::template append_names<Names>,
@@ -584,58 +665,80 @@ namespace nickel {
                 };
             }
 
-            static constexpr bool _has_defaults(priv_tag)
-            {
-                return !NICKEL_IS_SAME(Defaults, storage<>);
-            }
-
+            // Detects if this name_group has any kwargs.
             static constexpr bool _has_kwargs(priv_tag)
             {
                 return !NICKEL_IS_SAME(Kwargs, names_t<>);
             }
         };
 
-        template <typename Storage>
-        constexpr auto make_default_storage(Storage&& storage)
+        // Wraps a single argument into a name_group.
+        template <typename Name>
+        constexpr auto name_group_single(Name&&)
         {
-            return NICKEL_FWD(storage);
+            return detail::name_group<detail::storage<>, detail::names_t<>,
+                detail::names_t<typename detail::remove_cvref_t<Name>::name_type>> {
+                detail::construct_tag {},
+                detail::storage<> {detail::construct_tag {}},
+            };
         }
 
-        template <typename Storage, typename Name, typename Value, typename... DefaultedNames>
-        constexpr auto make_default_storage(
-            Storage&& storage, defaulted<Name, Value> defaulted_arg, DefaultedNames&&... names)
+        // Wraps a single defaulted argument into a name_group.
+        template <typename Name, typename Value>
+        constexpr auto name_group_single(defaulted<Name, Value> defaulted_arg)
         {
-            return make_default_storage(NICKEL_FWD(storage).template _set_value<Name>(
-                                            set_tag {}, NICKEL_MOVE(defaulted_arg).value),
-                NICKEL_FWD(names)...);
+            return name_group<storage<named<Name, Value>>, names_t<>,
+                names_t<typename remove_cvref_t<Name>::name_type>> {
+                construct_tag {},
+                storage<named<Name, Value>> {
+                    construct_tag {},
+                    named<Name, Value> {NICKEL_MOVE(defaulted_arg).value},
+                },
+            };
         }
 
-        template <typename Storage, typename DefaultedName, typename... DefaultedNames>
-        constexpr auto make_default_storage(
-            Storage&& storage, DefaultedName&&, DefaultedNames&&... names)
+        // "Wraps" a single name_group argument into a name_group
+        template <typename Defaults, typename Kwargs, typename Names>
+        constexpr auto name_group_single(name_group<Defaults, Kwargs, Names> group)
         {
-            return make_default_storage(NICKEL_FWD(storage), NICKEL_FWD(names)...);
+            return NICKEL_MOVE(group);
+        }
+
+        // Combines a sequence of name_groups into one.
+        constexpr auto name_group_impl()
+        {
+            return name_group<storage<>, names_t<>, names_t<>> {
+                construct_tag {},
+                storage<> {construct_tag {}},
+            };
+        }
+
+        template <typename NameGroup>
+        constexpr auto name_group_impl(NameGroup&& group)
+        {
+            return NICKEL_FWD(group);
+        }
+
+        template <typename First, typename Second, typename... Rest>
+        constexpr auto name_group_impl(First&& first, Second&& second, Rest&&... rest)
+        {
+            return detail::name_group_impl(
+                NICKEL_FWD(first).combine(NICKEL_FWD(second)), NICKEL_FWD(rest)...);
         }
     }
 
-    template <typename... DefaultedNames>
-    constexpr auto name_group(DefaultedNames&&... names)
+    // Groups several names, allowing them in most places where a single name can be passed.
+    // In such a case, a name_group acts as if the names were passed inline.
+    template <typename... Names>
+    constexpr auto name_group(Names&&... names)
     {
-        auto defaults = detail::make_default_storage(
-            detail::storage<> {detail::construct_tag {}}, NICKEL_FWD(names)...);
-        return detail::name_group<decltype(defaults), detail::names_t<>,
-            detail::names_t<typename detail::remove_cvref_t<DefaultedNames>::name_type...>> {
-            detail::construct_tag {},
-            NICKEL_MOVE(defaults),
-        };
+        return detail::name_group_impl(detail::name_group_single(NICKEL_FWD(names))...);
     }
 
-    template <typename Defaults, typename Kwargs, typename Names, typename... Rest>
-    constexpr auto name_group(detail::name_group<Defaults, Kwargs, Names> group, Rest&&... names)
-    {
-        return NICKEL_MOVE(group).combine(nickel::name_group(NICKEL_FWD(names)...));
-    }
-
+    // Marks names as kwargs.
+    // Kwargs can be set using the function call syntax, but will be grouped up and passed as the
+    // first argument to the lambda. This first argument can then be passed on to other named
+    // parameter functions.
     template <typename... Names>
     constexpr auto kwargs_group(Names&&... names)
     {
@@ -643,12 +746,15 @@ namespace nickel {
         return NICKEL_MOVE(ng)._mark_all_kwargs(detail::mark_kwargs_tag {});
     }
 
+    // Creates a wrapped function definition with the specified named parameters.
+    // nickel::wrap(clustered=false, count)([](bool clustered, int num_stars) { /* spawn stars */ })
     template <typename... Names>
     constexpr auto wrap(Names&&... names)
     {
         return nickel::name_group(NICKEL_FWD(names)...)(detail::name_group_to_partial_fn_tag {});
     }
 
+    // Marks a default argument value as unevaluated unless needed.
     template <typename Lambda>
     constexpr auto deferred(Lambda&& fn)
     {
@@ -656,6 +762,8 @@ namespace nickel {
             detail::construct_tag {}, NICKEL_FWD(fn));
     }
 
+    // EXPERIMENTAL
+    // Enables stealing members from `object` in the order specified by the caller.
     template <typename Class, typename... Names, typename... PtrToMemData>
     constexpr auto steal(Class&& object, detail::defaulted<Names, PtrToMemData>... names)
     {
@@ -671,6 +779,7 @@ namespace nickel {
             ._make_steal_wrapped_fn(detail::priv_tag {}, std::addressof(object));
     }
 
+// Creates a name. This is the 2-arg overload.
 #define NICKEL_DETAIL_NAME2(variable, name)                                                        \
     template <int N = -1>                                                                          \
     struct variable##_nickel_name_type                                                             \
@@ -735,12 +844,18 @@ namespace nickel {
     constexpr auto variable = variable##_nickel_name_type<>                                        \
     { }
 
+// Creates a name. This is the 1-arg overload.
 #define NICKEL_DETAIL_NAME1(name) NICKEL_DETAIL_NAME2(name, name)
 
 // Force evaluation of the preprocessor, even previous tokens of `MACRO ( macro args )`
 #define NICKEL_DETAIL_EXPAND(...) __VA_ARGS__
 
 #define NICKEL_DETAIL_NAME_OVERLOAD(_1, _2, Overload, ...) Overload
+
+// Creates a name.
+// There are two overloads, one for 2 arguments, and one for 1 argument.
+// 2 args: NICKEL_NAME(var, name): creates a variable `var` with name `.<name>()`.
+// 1 arg: NICKEL_NAME(name): Equivalent to NICKEL_NAME(name, name).
 #define NICKEL_NAME(...)                                                                           \
     NICKEL_DETAIL_EXPAND(NICKEL_DETAIL_NAME_OVERLOAD(                                              \
         __VA_ARGS__, NICKEL_DETAIL_NAME2, NICKEL_DETAIL_NAME1, )(__VA_ARGS__))

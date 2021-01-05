@@ -224,3 +224,15 @@ TEST_CASE("proper lifetime management")
         }
     }
 }
+
+namespace {
+    auto some_other_function()
+    {
+        return nickel::wrap()([] { return 42; });
+    }
+}
+
+TEST_CASE("Empty wrap is possible")
+{
+    CHECK(some_other_function()() == 42);
+}

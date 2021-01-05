@@ -75,7 +75,7 @@ Named Parameters Idiom
 
     // Alternative:
     my_function(args().x(42).y(34));
-    
+
 The main disadvantage here is that it's a lot of boilerplate to write out a new fluent interface
 every time you want to define a new function / set of arguments.
 This is most commonly used for constructing a type, in which case it may be worth it,

@@ -1,30 +1,30 @@
 # Nickel
 
-Nickel enables users to provide an alternative calling syntax allowing named parameters.
-
-There are currently a number of solutions to named parameters in the language,
-all of which have their own drawbacks.
-Nickel provides a different solution with different drawbacks.
+Nickel provides an alternative named parameter syntax for function calls.
 
 ## Example
 
 ```c++
 #include <nickel/nickel.hpp>
 
+// Declare the names
 NICKEL_NAME(width_name, width);
 NICKEL_NAME(height_name, height);
 
+// Declare the function
 auto rectangle_area() {
     return nickel::wrap(width_name, height_name)([](int width, int height) {
+        // The actual definition of the function
         return width * height;
     });
 }
 
 int foo() {
-    // Returns 42 * 35 = 1470
+    // Call the function
     return rectangle_area()
-        .width(42)
-        .height(35)();
+        .width(42)      // Bind named arguments
+        .height(35)();  // Bind `height`, then perform the actual call
+    // Returns 42 * 35 = 1470
 }
 ```
 
