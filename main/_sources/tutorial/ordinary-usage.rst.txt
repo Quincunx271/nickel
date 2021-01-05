@@ -8,7 +8,7 @@ Suppose we have a function for computing the logarithm of its input for a partic
 We might declare this function like so:
 
 .. code:: c++
-    
+
     double logarithm(double operand, double base);
 
 This declaration has a flaw, there's nothing inherently obvious about the order of the parameters,
@@ -16,7 +16,7 @@ and especially because they're of the same type, it's easy for a user to acciden
 arguments when calling the logarithm:
 
 .. code:: c++
-    
+
     double result = logarithm(100, 10); // log10(100) or log100(10)?
 
 We can improve this situation by using named parameters.

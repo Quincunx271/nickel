@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motivation &#8212; Nickel  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial" href="tutorial/index.html" />
+    <link rel="prev" title="Nickel" href="index.html" />
+  
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  <script src="../version-selector.js"></script>
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="tutorial/index.html" title="Tutorial"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Nickel"
+             accesskey="P">previous</a> |</li>
+  
+        <li class="nav-item nav-item-0"><a href="index.html">Nickel  documentation</a> &#187;</li>
+  <span id='version-selector-container'></span>
+  <script>
+    $('body').data('documentation-root', "..")
+    $('body').data('documentation-current-page', "motivation.html")
+  </script>
+
+        <li class="nav-item nav-item-this"><a href="">Motivation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="motivation">
+<h1>Motivation<a class="headerlink" href="#motivation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="why-named-parameters">
+<h2>Why Named Parameters?<a class="headerlink" href="#why-named-parameters" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes, positional function parameters are not sufficient.
+We reach situations where it’s not clear what a particular argument means in a function call:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">setColor</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">);</span> <span class="c1">// Is this RGB? HSV? Some other sequence?</span>
+<span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span><span class="s">&quot;--depth&quot;</span><span class="p">,</span> <span class="nb">false</span><span class="p">,</span> <span class="n">type</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">,</span> <span class="s">&quot;The number of commits to clone&quot;</span><span class="p">);</span>
+<span class="n">logarithm</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span> <span class="c1">// Is this log2(10) or log10(2)?</span>
+</pre></div>
+</div>
+<p>There are techniques to work around this, but they aren’t always ideal:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">setColorRGB</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">);</span>
+<span class="n">setColor</span><span class="p">(</span><span class="n">Red</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Green</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">Blue</span><span class="p">(</span><span class="mi">30</span><span class="p">));</span>
+
+<span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span><span class="s">&quot;--depth&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">::</span><span class="n">no</span><span class="p">,</span> <span class="s">&quot;The number of commits to clone&quot;</span><span class="p">);</span>
+<span class="c1">// ...</span>
+<span class="kt">int</span> <span class="n">depth</span> <span class="o">=</span> <span class="n">parsedArgs</span><span class="p">[</span><span class="s">&quot;--depth&quot;</span><span class="p">];</span> <span class="c1">// replaces type&lt;int&gt;</span>
+
+<span class="c1">// ... How do we do logarithm?</span>
+<span class="n">LogArgs</span> <span class="n">args</span><span class="p">;</span>
+<span class="n">args</span><span class="p">.</span><span class="n">operand</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">args</span><span class="p">.</span><span class="n">base</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">logarithm</span><span class="p">(</span><span class="n">args</span><span class="p">);</span> <span class="c1">// yuck</span>
+</pre></div>
+</div>
+<p>Named parameters allow us to solve these problems.
+They might not always be the right solution, but they’re another tool in the toolbox:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">setColor</span><span class="p">(</span><span class="n">red</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">green</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">blue</span><span class="o">=</span><span class="mi">30</span><span class="p">);</span>
+<span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span>
+    <span class="s">&quot;--depth&quot;</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="nb">false</span><span class="p">,</span>
+    <span class="n">type</span><span class="o">=</span><span class="n">type</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s">&quot;The number of commits to clone&quot;</span>
+<span class="p">);</span>
+<span class="n">logarithm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">10</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Unfortunately, C++ does not have this.</p>
+</div>
+<div class="section" id="why-nickel">
+<h2>Why Nickel?<a class="headerlink" href="#why-nickel" title="Permalink to this headline">¶</a></h2>
+<p>For a more in-depth comparison of Nickel verses the alternatives, see <a class="reference internal" href="comparison.html"><span class="doc">Comparison With Other Named Parameters Solutions</span></a>.</p>
+<p>There are many techniques to emulate named parameters in C++, but they all have flaws:
+failing to work well with templates,
+requiring lots of macro use,
+and failing to provide parameter names in IDE intellisense
+among other issues.
+Nickel attempts to address these flaws, with a couple of minor features as the cherry on top.</p>
+<div class="section" id="templates">
+<h3>Templates<a class="headerlink" href="#templates" title="Permalink to this headline">¶</a></h3>
+<p>Some promising named parameter solutions—designated initializers in particular—fail to work for
+function templates, only working when you know the concrete type.
+This is not acceptable: either we cannot generalize functions which have named parameters
+or we have to have a distinct named parameter syntax just for templates.</p>
+<p>Nickel was designed specifically to accommodate templates just as well as concrete functions.
+For example, default arguments can be a completely different type from the eventually-bound value.</p>
+</div>
+<div class="section" id="macros-and-boilerplate">
+<h3>Macros and Boilerplate<a class="headerlink" href="#macros-and-boilerplate" title="Permalink to this headline">¶</a></h3>
+<p>Several named parameter solutions mangle your code by requiring extensive use of macros.
+Some require that your function’s declaration be replaced with a complicated macro invocation,
+and others require that your function be implemented and called as a macro.
+The latter is clearly undesirable, and the former still has the drawback of masking the actual
+C++ tokens behind layers of macros which don’t even look like a function declaration.</p>
+<p>Other macro-free solutions require extensive boilerplate to use:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Designated initializers require a new struct definition for each set of function arguments.</p></li>
+<li><p>The Named Parameters Idiom requires setting up a new fluent interface for each set of function arguments.</p></li>
+</ul>
+</div></blockquote>
+<p>While a macro-free world would be ideal and would indeed be possible with generative reflection,
+Nickel’s compromise is to require a macro only to declare the names as used by the author of the function.
+This provides minimal boilerplate while simultaneously avoiding the worst of macros.</p>
+</div>
+<div class="section" id="intellisense-friendliness">
+<h3>IntelliSense Friendliness<a class="headerlink" href="#intellisense-friendliness" title="Permalink to this headline">¶</a></h3>
+<p>Most named parameter solutions focus purely on the calling syntax,
+but fail to account for the actual writing of the function call:
+how does one determine what parameters are available or still remain to be specified?</p>
+<p>One popular technique is to provide name objects with overloaded <code class="docutils literal notranslate"><span class="pre">operator=</span></code> so as to imitate an ideal named parameter syntax:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">using</span> <span class="k">namespace</span> <span class="n">parameter_names</span><span class="p">;</span>
+<span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span><span class="s">&quot;--depth&quot;</span><span class="p">,</span> <span class="n">required_</span><span class="o">=</span><span class="nb">false</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="n">type</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">help_</span><span class="o">=</span><span class="s">&quot;...&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Setting aside the issue of namespace pollution (<code class="docutils literal notranslate"><span class="pre">required_</span></code>, <code class="docutils literal notranslate"><span class="pre">type_</span></code>, and <code class="docutils literal notranslate"><span class="pre">help_</span></code> are all names which are now reserved for the parameter name),
+this is problematic because we don’t get much IDE support when writing this function call:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span>
+    <span class="s">&quot;--depth&quot;</span><span class="p">,</span>
+    <span class="c1">// Was it &quot;required&quot; or &quot;required_&quot; or &quot;default_=value&quot; or ...?</span>
+    <span class="c1">// Was it &quot;help&quot; or &quot;help_&quot; or &quot;description&quot; or ...?</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>IntelliSense cannot help us here, because the IDE does not know that the names are different from ordinary variables.</p>
+<p>In contrast, for Nickel’s approach, the IDE has plenty of information on what names are available and on what names have already been set:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span><span class="s">&quot;--depth&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">required</span><span class="p">(</span><span class="nb">false</span><span class="p">)</span>
+    <span class="p">.</span> <span class="c1">// IDE shows exactly the names: type(...), description(...)</span>
+</pre></div>
+</div>
+<p>Nickel is not the only solution with IntelliSense friendliness (e.g. designated initializers),
+but other known ways miss out on other features.</p>
+</div>
+</div>
+<div class="section" id="why-nickel-s-weird-syntax">
+<h2>Why Nickel’s Weird Syntax?<a class="headerlink" href="#why-nickel-s-weird-syntax" title="Permalink to this headline">¶</a></h2>
+<p>Nickel’s calling syntax is, admittedly, weird.
+However, a lot of thought was put into this specific syntax,
+and it was the best that we could come up with.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// IntelliSense problems, namespace pollution:</span>
+<span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span>
+    <span class="s">&quot;--depth&quot;</span><span class="p">,</span>
+    <span class="n">required_</span><span class="o">=</span><span class="nb">false</span><span class="p">,</span>
+    <span class="n">type_</span><span class="o">=</span><span class="n">type</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">help_</span><span class="o">=</span><span class="s">&quot;The number of commits to clone&quot;</span>
+<span class="p">);</span>
+
+<span class="c1">// Each set of function arguments needs a new name in our namespace,</span>
+<span class="c1">// or we&#39;d otherwise have invalid name suggestions which don&#39;t apply</span>
+<span class="c1">// for the particular function we&#39;re calling</span>
+<span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span>
+    <span class="s">&quot;--depth&quot;</span><span class="p">,</span>
+    <span class="n">argparse</span><span class="o">::</span><span class="n">names</span><span class="p">()</span>
+        <span class="p">.</span><span class="n">required</span><span class="p">(</span><span class="nb">false</span><span class="p">)</span>
+        <span class="p">.</span><span class="n">type</span><span class="p">(</span><span class="n">type</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">)</span>
+        <span class="p">.</span><span class="n">help</span><span class="p">(</span><span class="s">&quot;The number of commits to clone&quot;</span><span class="p">)</span>
+<span class="p">);</span>
+
+<span class="c1">// How do we know when the user has stopped specifying arguments?</span>
+<span class="c1">// Either we lose the ability to specify arguments out of order,</span>
+<span class="c1">// or we lose the ability to have default arguments.</span>
+<span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span><span class="s">&quot;--depth&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">required</span><span class="p">(</span><span class="nb">false</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">type</span><span class="p">(</span><span class="n">type</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">help</span><span class="p">(</span><span class="s">&quot;The number of commits to clone&quot;</span><span class="p">);</span>
+
+<span class="c1">// Nickel&#39;s solution: require an explicit &quot;execute the command&quot;</span>
+<span class="n">argparser</span><span class="p">.</span><span class="n">addArgument</span><span class="p">(</span><span class="s">&quot;--depth&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">required</span><span class="p">(</span><span class="nb">false</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">type</span><span class="p">(</span><span class="n">type</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">)</span>
+    <span class="p">.</span><span class="n">help</span><span class="p">(</span><span class="s">&quot;The number of commits to clone&quot;</span><span class="p">)</span>
+    <span class="p">();</span> <span class="c1">// Execute the function.</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Motivation</a><ul>
+<li><a class="reference internal" href="#why-named-parameters">Why Named Parameters?</a></li>
+<li><a class="reference internal" href="#why-nickel">Why Nickel?</a><ul>
+<li><a class="reference internal" href="#templates">Templates</a></li>
+<li><a class="reference internal" href="#macros-and-boilerplate">Macros and Boilerplate</a></li>
+<li><a class="reference internal" href="#intellisense-friendliness">IntelliSense Friendliness</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#why-nickel-s-weird-syntax">Why Nickel’s Weird Syntax?</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Nickel</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tutorial/index.html"
+                        title="next chapter">Tutorial</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/motivation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="tutorial/index.html" title="Tutorial"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Nickel"
+             >previous</a> |</li>
+  
+        <li class="nav-item nav-item-0"><a href="index.html">Nickel  documentation</a> &#187;</li>
+  <span id='version-selector-container'></span>
+  <script>
+    $('body').data('documentation-root', "..")
+    $('body').data('documentation-current-page', "motivation.html")
+  </script>
+
+        <li class="nav-item nav-item-this"><a href="">Motivation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Justin Bassett.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.2.
+    </div>
+  </body>
+</html>

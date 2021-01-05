@@ -14,7 +14,7 @@
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tutorial" href="tutorial/index.html" />
+    <link rel="next" title="Motivation" href="motivation.html" />
   
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -33,7 +33,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="tutorial/index.html" title="Tutorial"
+          <a href="motivation.html" title="Motivation"
              accesskey="N">next</a> |</li>
   
         <li class="nav-item nav-item-0"><a href="#">Nickel  documentation</a> &#187;</li>
@@ -54,10 +54,24 @@
             
   <div class="section" id="nickel">
 <h1>Nickel<a class="headerlink" href="#nickel" title="Permalink to this headline">¶</a></h1>
-<p>Nickel is a library for providing named parameters on functions.</p>
-<p>See <a class="reference internal" href="tutorial/index.html"><span class="doc">Tutorial</span></a>.</p>
+<p>Nickel provides an alternative named parameter syntax for function calls.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="motivation.html">Motivation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="motivation.html#why-named-parameters">Why Named Parameters?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="motivation.html#why-nickel">Why Nickel?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="motivation.html#templates">Templates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="motivation.html#macros-and-boilerplate">Macros and Boilerplate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="motivation.html#intellisense-friendliness">IntelliSense Friendliness</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="motivation.html#why-nickel-s-weird-syntax">Why Nickel’s Weird Syntax?</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="tutorial/index.html">Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorial/ordinary-usage.html">Usage for an Ordinary Function</a></li>
@@ -106,6 +120,32 @@
 </ul>
 </div>
 </div>
+<div class="section" id="example">
+<h1>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;nickel/nickel.hpp&gt;</span><span class="cp"></span>
+
+<span class="c1">// Declare the names</span>
+<span class="n">NICKEL_NAME</span><span class="p">(</span><span class="n">width_name</span><span class="p">,</span> <span class="n">width</span><span class="p">);</span>
+<span class="n">NICKEL_NAME</span><span class="p">(</span><span class="n">height_name</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+
+<span class="c1">// Declare the function</span>
+<span class="k">auto</span> <span class="nf">rectangle_area</span><span class="p">()</span> <span class="p">{</span>
+   <span class="k">return</span> <span class="n">nickel</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">width_name</span><span class="p">,</span> <span class="n">height_name</span><span class="p">)([](</span><span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">)</span> <span class="p">{</span>
+      <span class="c1">// The actual definition of the function</span>
+      <span class="k">return</span> <span class="n">width</span> <span class="o">*</span> <span class="n">height</span><span class="p">;</span>
+   <span class="p">});</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">foo</span><span class="p">()</span> <span class="p">{</span>
+   <span class="c1">// Call the function</span>
+   <span class="k">return</span> <span class="n">rectangle_area</span><span class="p">()</span>
+      <span class="p">.</span><span class="n">width</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>      <span class="c1">// Bind named arguments</span>
+      <span class="p">.</span><span class="n">height</span><span class="p">(</span><span class="mi">35</span><span class="p">)();</span>  <span class="c1">// Bind `height`, then perform the actual call</span>
+   <span class="c1">// Returns 42 * 35 = 1470</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
@@ -126,12 +166,13 @@
 <li><a class="reference internal" href="#">Nickel</a><ul>
 </ul>
 </li>
+<li><a class="reference internal" href="#example">Example</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
   <h4>Next topic</h4>
-  <p class="topless"><a href="tutorial/index.html"
-                        title="next chapter">Tutorial</a></p>
+  <p class="topless"><a href="motivation.html"
+                        title="next chapter">Motivation</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -160,7 +201,7 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="tutorial/index.html" title="Tutorial"
+          <a href="motivation.html" title="Motivation"
              >next</a> |</li>
   
         <li class="nav-item nav-item-0"><a href="#">Nickel  documentation</a> &#187;</li>

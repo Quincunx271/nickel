@@ -26,7 +26,7 @@ the rule of thumb is to only ``std::move(...)`` from an object once.
 This code breaks that rule, not to mention that it breaks the encapsulation on our data members.
 
 
-Using Nickel 
+Using Nickel
 ------------
 
 As an **experimental** feature, Nickel has a ``nickel::steal(...)`` function to produce a nicer syntax.
