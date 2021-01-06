@@ -5,7 +5,7 @@
 
 #include <nickel/nickel.hpp>
 
-// ERROR_MATCHES: do_something
+// ERROR_MATCHES: missing_eval_void.test.cpp\D*20\b
 // ERROR_MATCHES: bare \(\)
 
 NICKEL_NAME(abc);

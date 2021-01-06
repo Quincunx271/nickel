@@ -70,3 +70,7 @@ if __name__ == '__main__':
         if result.returncode == 0:
             print(f'Expected compile failure, but compile succeeded.', file=sys.stderr)
             exit(1)
+
+    print('Test Passed.\n'
+          + 'Stderr\n'
+          + result.stderr)
