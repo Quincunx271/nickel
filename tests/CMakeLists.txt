@@ -53,9 +53,24 @@ catch_discover_tests(test.nickel
 
 # Test that compilation fails
 include(TestCompileError)
-file(GLOB_RECURSE compile_failure_test_sources CONFIGURE_DEPENDS "compile_error/*.test.cpp")
+include(CheckCXXSourceCompiles)
 
-add_compile_failure_tests(
-  ${compile_failure_test_sources}
-  LINK_LIBRARIES nickel::nickel
+check_cxx_source_compiles([==[
+  struct [[nodiscard /* "With a Reason */]] SomeType {};
+
+  SomeType someFunction() { return {}; }
+
+  int main() {
+    auto x = someFunction();
+  }
+  ]==]
+  NODISCARD_SUPPORTED
+  FAIL_REGEX "With a Reason"
 )
+
+link_libraries(nickel::nickel)
+add_compile_failure_test(compile_error/steal.nonrvalue.test.cpp)
+
+if(NODISCARD_SUPPORTED)
+  add_compile_failure_test(compile_error/missing_eval_void.test.cpp)
+endif()

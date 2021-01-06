@@ -15,6 +15,18 @@
 #include <tuple>
 #include <type_traits>
 
+#ifdef __has_cpp_attribute
+#    if __has_cpp_attribute(nodiscard) >= 201907
+#        define NICKEL_NODISCARD(...) [[nodiscard(__VA_ARGS__)]]
+#    elif __has_cpp_attribute(nodiscard)
+#        define NICKEL_NODISCARD(...) [[nodiscard]]
+#    else
+#        define NICKEL_NODISCARD(...)
+#    endif
+#else
+#    define NICKEL_NODISCARD(...)
+#endif
+
 // std::forward
 #define NICKEL_DETAIL_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
 // std::move
@@ -27,13 +39,13 @@
 
 // Wraps std::trait_v<...> to work pre-C++17.
 #ifdef __cpp_lib_type_trait_variable_templates
-#define NICKEL_IS_VOID(...) std::is_void_v<__VA_ARGS__>
-#define NICKEL_IS_SAME(...) std::is_same_v<__VA_ARGS__>
-#define NICKEL_IS_RVALUE_REFERENCE(...) std::is_rvalue_reference_v<__VA_ARGS__>
+#    define NICKEL_IS_VOID(...) std::is_void_v<__VA_ARGS__>
+#    define NICKEL_IS_SAME(...) std::is_same_v<__VA_ARGS__>
+#    define NICKEL_IS_RVALUE_REFERENCE(...) std::is_rvalue_reference_v<__VA_ARGS__>
 #else
-#define NICKEL_IS_VOID(...) std::is_void<__VA_ARGS__>::value
-#define NICKEL_IS_SAME(...) std::is_same<__VA_ARGS__>::value
-#define NICKEL_IS_RVALUE_REFERENCE(...) std::is_rvalue_reference<__VA_ARGS__>::value
+#    define NICKEL_IS_VOID(...) std::is_void<__VA_ARGS__>::value
+#    define NICKEL_IS_SAME(...) std::is_same<__VA_ARGS__>::value
+#    define NICKEL_IS_RVALUE_REFERENCE(...) std::is_rvalue_reference<__VA_ARGS__>::value
 #endif
 
 namespace nickel {
@@ -430,9 +442,10 @@ namespace nickel {
             typename Kwargs, // Any Kwargs
             typename Names, // The explicit named parameters
             typename CallEvalPolicy> // How to implement calling `Fn`.
-        class wrapped_fn : public wrapped_fn_base<
-                               wrapped_fn<Defaults, Storage, Fn, Kwargs, Names, CallEvalPolicy>,
-                               Storage, Kwargs, Names>
+        class NICKEL_NODISCARD("Should be invoked with a bare () at the end") wrapped_fn
+            : public wrapped_fn_base<
+                  wrapped_fn<Defaults, Storage, Fn, Kwargs, Names, CallEvalPolicy>, Storage, Kwargs,
+                  Names>
         {
         private:
             Defaults defaults_;
