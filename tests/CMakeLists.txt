@@ -56,7 +56,7 @@ include(TestCompileError)
 include(CheckCXXSourceCompiles)
 
 check_cxx_source_compiles([==[
-  struct [[nodiscard /* "With a Reason */]] SomeType {};
+  struct [[nodiscard]] SomeType {};
 
   SomeType someFunction() { return {}; }
 
@@ -65,7 +65,6 @@ check_cxx_source_compiles([==[
   }
   ]==]
   NODISCARD_SUPPORTED
-  FAIL_REGEX "With a Reason"
 )
 
 link_libraries(nickel::nickel)
