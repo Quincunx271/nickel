@@ -33,7 +33,7 @@
 #endif
 #define NICKEL_DETAIL_CLANG_WIGNORE(warning, ...)                                                  \
     NICKEL_DETAIL_CLANG_PRAGMA(clang diagnostic push)                                              \
-    NICKEL_DETAIL_CLANG_PRAGMA(clang diagnostic ignore warning)                                    \
+    NICKEL_DETAIL_CLANG_PRAGMA(clang diagnostic ignored warning)                                   \
     __VA_ARGS__ NICKEL_DETAIL_CLANG_PRAGMA(clang diagnostic pop)
 
 #ifdef NICKEL_DETAIL_IS_GCC
@@ -43,7 +43,7 @@
 #endif
 #define NICKEL_DETAIL_GCC_WIGNORE(warning, ...)                                                    \
     NICKEL_DETAIL_GCC_PRAGMA(GCC diagnostic push)                                                  \
-    NICKEL_DETAIL_GCC_PRAGMA(GCC diagnostic ignore warning)                                        \
+    NICKEL_DETAIL_GCC_PRAGMA(GCC diagnostic ignored warning)                                       \
     __VA_ARGS__ NICKEL_DETAIL_GCC_PRAGMA(GCC diagnostic pop)
 
 #ifdef NICKEL_DETAIL_IS_MSVC
