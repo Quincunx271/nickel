@@ -19,6 +19,7 @@ BraceWrapping:
   SplitEmptyNamespace: true
 ColumnLimit: 100
 IndentWidth: 4
+IndentPPDirectives: AfterHash
 Cpp11BracedListStyle: true
 NamespaceIndentation: All
 Standard: Cpp11
