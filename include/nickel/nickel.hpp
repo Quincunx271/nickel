@@ -23,28 +23,31 @@
 #    define NICKEL_DETAIL_IS_MSVC
 #endif
 
+#define NICKEL_DETAIL_STR2(...) #__VA_ARGS__
+#define NICKEL_DETAIL_STR(...) NICKEL_DETAIL_STR2(__VA_ARGS__)
+
 #ifdef NICKEL_DETAIL_IS_CLANG
-#    define NICKEL_DETAIL_CLANG_PRAGMA(...) _Pragma(__VA_ARGS__)
-#    define NICKEL_DETAIL_CLANG_WIGNORE(warning, ...)                                              \
-        _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignore " #warning)              \
-            __VA_ARGS__ _Pragma("clang diagnostic pop")
+#    define NICKEL_DETAIL_CLANG_PRAGMA(...) _Pragma(NICKEL_DETAIL_STR(__VA_ARGS__))
 #else
 #    define NICKEL_DETAIL_CLANG_PRAGMA(...)
-#    define NICKEL_DETAIL_CLANG_WIGNORE(warning, ...) __VA_ARGS__
 #endif
+#define NICKEL_DETAIL_CLANG_WIGNORE(warning, ...)                                                  \
+    NICKEL_DETAIL_CLANG_PRAGMA(clang diagnostic push)                                              \
+    NICKEL_DETAIL_CLANG_PRAGMA(clang diagnostic ignore warning)                                    \
+    __VA_ARGS__ NICKEL_DETAIL_CLANG_PRAGMA(clang diagnostic pop)
 
 #ifdef NICKEL_DETAIL_IS_GCC
-#    define NICKEL_DETAIL_GCC_PRAGMA(...) _Pragma(__VA_ARGS__)
-#    define NICKEL_DETAIL_GCC_WIGNORE(warning, ...)                                                \
-        _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignore " #warning)                  \
-            __VA_ARGS__ _Pragma("GCC diagnostic pop")
+#    define NICKEL_DETAIL_GCC_PRAGMA(...) _Pragma(NICKEL_DETAIL_STR(__VA_ARGS__))
 #else
 #    define NICKEL_DETAIL_GCC_PRAGMA(...)
-#    define NICKEL_DETAIL_GCC_WIGNORE(warning, ...) __VA_ARGS__
 #endif
+#define NICKEL_DETAIL_GCC_WIGNORE(warning, ...)                                                    \
+    NICKEL_DETAIL_GCC_PRAGMA(GCC diagnostic push)                                                  \
+    NICKEL_DETAIL_GCC_PRAGMA(GCC diagnostic ignore warning)                                        \
+    __VA_ARGS__ NICKEL_DETAIL_GCC_PRAGMA(GCC diagnostic pop)
 
 #ifdef NICKEL_DETAIL_IS_MSVC
-#    define NICKEL_DETAIL_MSVC_PRAGMA(...) _Pragma(__VA_ARGS__)
+#    define NICKEL_DETAIL_MSVC_PRAGMA(...) _Pragma(NICKEL_DETAIL_STR(__VA_ARGS__))
 #else
 #    define NICKEL_DETAIL_MSVC_PRAGMA(...)
 #endif
