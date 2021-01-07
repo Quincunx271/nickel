@@ -15,17 +15,61 @@
 #include <tuple>
 #include <type_traits>
 
+#if defined(__clang__)
+#    define NICKEL_DETAIL_IS_CLANG
+#elif defined(__GNUC__)
+#    define NICKEL_DETAIL_IS_GCC
+#elif defined(_MSC_VER)
+#    define NICKEL_DETAIL_IS_MSVC
+#endif
+
+#ifdef NICKEL_DETAIL_IS_CLANG
+#    define NICKEL_DETAIL_CLANG_PRAGMA(...) _Pragma(__VA_ARGS__)
+#    define NICKEL_DETAIL_CLANG_WIGNORE(warning, ...)                                              \
+        _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignore " #warning)              \
+            __VA_ARGS__ _Pragma("clang diagnostic pop")
+#else
+#    define NICKEL_DETAIL_CLANG_PRAGMA(...)
+#    define NICKEL_DETAIL_CLANG_WIGNORE(warning, ...) __VA_ARGS__
+#endif
+
+#ifdef NICKEL_DETAIL_IS_GCC
+#    define NICKEL_DETAIL_GCC_PRAGMA(...) _Pragma(__VA_ARGS__)
+#    define NICKEL_DETAIL_GCC_WIGNORE(warning, ...)                                                \
+        _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignore " #warning)                  \
+            __VA_ARGS__ _Pragma("GCC diagnostic pop")
+#else
+#    define NICKEL_DETAIL_GCC_PRAGMA(...)
+#    define NICKEL_DETAIL_GCC_WIGNORE(warning, ...) __VA_ARGS__
+#endif
+
+#ifdef NICKEL_DETAIL_IS_MSVC
+#    define NICKEL_DETAIL_MSVC_PRAGMA(...) _Pragma(__VA_ARGS__)
+#else
+#    define NICKEL_DETAIL_MSVC_PRAGMA(...)
+#endif
+
+#define NICKEL_CLANG_PRAGMA NICKEL_DETAIL_CLANG_PRAGMA
+#define NICKEL_CLANG_WIGNORE NICKEL_DETAIL_CLANG_WIGNORE
+#define NICKEL_GCC_PRAGMA NICKEL_DETAIL_GCC_PRAGMA
+#define NICKEL_GCC_WIGNORE NICKEL_DETAIL_GCC_WIGNORE
+#define NICKEL_MSVC_PRAGMA NICKEL_DETAIL_MSVC_PRAGMA
+
 #ifdef __has_cpp_attribute
 #    if __has_cpp_attribute(nodiscard) >= 201907
-#        define NICKEL_NODISCARD(...) [[nodiscard(__VA_ARGS__)]]
+#        define NICKEL_DETAIL_NODISCARD(...)                                                       \
+            NICKEL_CLANG_WIGNORE("-Wc++20-extensions", [[nodiscard(__VA_ARGS__)]])
 #    elif __has_cpp_attribute(nodiscard)
-#        define NICKEL_NODISCARD(...) [[nodiscard]]
+#        define NICKEL_DETAIL_NODISCARD(...)                                                       \
+            NICKEL_CLANG_WIGNORE("-Wc++17-extensions", [[nodiscard]])
 #    else
-#        define NICKEL_NODISCARD(...)
+#        define NICKEL_DETAIL_NODISCARD(...)
 #    endif
 #else
-#    define NICKEL_NODISCARD(...)
+#    define NICKEL_DETAIL_NODISCARD(...)
 #endif
+
+#define NICKEL_NODISCARD NICKEL_DETAIL_NODISCARD
 
 // std::forward
 #define NICKEL_DETAIL_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
@@ -879,5 +923,11 @@ namespace nickel {
 #undef NICKEL_IS_VOID
 #undef NICKEL_IS_SAME
 #undef NICKEL_IS_RVALUE_REFERENCE
+#undef NICKEL_NODISCARD
+#undef NICKEL_MSVC_PRAGMA
+#undef NICKEL_GCC_WIGNORE
+#undef NICKEL_GCC_PRAGMA
+#undef NICKEL_CLANG_WIGNORE
+#undef NICKEL_CLANG_PRAGMA
 
 #endif
